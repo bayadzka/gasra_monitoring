@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "640178078797",
+    "project_id": "gasra-monitoring-notif",
+    "storage_bucket": "gasra-monitoring-notif.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:640178078797:android:6e123909b0c356ac36c804",
+        "android_client_info": {
+          "package_name": "com.example.gasra_monitoring"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjgA1uikbcJEGyTr_s6nRLpuFOAdE7KbA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
