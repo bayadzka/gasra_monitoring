@@ -6,6 +6,7 @@ import 'package:gasra_monitoring/core/theme.dart';
 import 'package:gasra_monitoring/features/auth/providers/auth_provider.dart';
 import 'package:gasra_monitoring/features/dashboard/home_page.dart';
 import 'package:provider/provider.dart';
+import 'package:gasra_monitoring/core/services/notification_service.dart';
 
 class LoginForm extends StatefulWidget {
   final ScrollController scrollController;
@@ -44,6 +45,8 @@ class _LoginFormState extends State<LoginForm> {
       );
       if (mounted && res.user != null) {
         await context.read<AuthProvider>().loadUserProfile();
+        await NotificationService().getTokenAndSave();
+
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const HomePage()),
             (route) => false);

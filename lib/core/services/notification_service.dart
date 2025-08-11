@@ -2,39 +2,91 @@
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gasra_monitoring/core/services/supabase_config.dart';
 
 class NotificationService {
-  // Buat instance dari Firebase Messaging
   final _firebaseMessaging = FirebaseMessaging.instance;
+  final _localNotifications = FlutterLocalNotificationsPlugin();
 
-  // Fungsi untuk inisialisasi notifikasi
-  Future<void> initialize() async {
-    // 1. Meminta izin dari pengguna (penting untuk iOS & Android 13+)
-    await _firebaseMessaging.requestPermission();
-
-    // 2. Mengambil FCM Token unik untuk perangkat ini
-    final fcmToken = await _firebaseMessaging.getToken();
-    if (kDebugMode) {
-      print('====================================');
-      print('FCM Token: $fcmToken');
-      print('====================================');
-    }
-    // Nanti kita akan simpan token ini ke Supabase
-
-    // 3. Menyiapkan listener untuk notifikasi saat aplikasi sedang dibuka (foreground)
-    FirebaseMessaging.onMessage.listen(_handleMessage);
+  Future<void> _initializeLocalNotifications() async {
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@drawable/ic_notification');
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings();
+    const InitializationSettings settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+    await _localNotifications.initialize(settings);
   }
 
-  // Fungsi untuk menangani notifikasi yang masuk saat aplikasi terbuka
-  void _handleMessage(RemoteMessage? message) {
-    if (message == null) return;
+  Future<void> initialize() async {
+    await _firebaseMessaging.requestPermission();
+    await _initializeLocalNotifications();
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+  }
+
+  Future<void> _handleForegroundMessage(RemoteMessage? message) async {
+    // [FIX] Tambahkan null check yang lebih kuat di awal
+    if (message == null || message.notification == null) {
+      if (kDebugMode) {
+        print('Pesan foreground diterima tapi tidak ada notifikasi.');
+      }
+      return;
+    }
 
     if (kDebugMode) {
       print('Pesan notifikasi diterima di foreground!');
-      print('Judul: ${message.notification?.title}');
-      print('Isi: ${message.notification?.body}');
-      print('Data: ${message.data}');
+      print('Judul: ${message.notification!.title}');
+      print('Isi: ${message.notification!.body}');
     }
-    // Di sini Anda bisa menampilkan dialog atau snackbar jika diperlukan
+
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_importance_channel',
+      'High Importance Notifications',
+      description: 'Channel ini digunakan untuk notifikasi penting.',
+      importance: Importance.max,
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    _localNotifications.show(
+      message.hashCode,
+      message.notification!.title,
+      message.notification!.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
+          icon: '@drawable/ic_notification',
+        ),
+      ),
+    );
+  }
+
+  Future<void> getTokenAndSave() async {
+    final fcmToken = await _firebaseMessaging.getToken();
+    if (fcmToken == null) return;
+    await _saveTokenToDatabase(fcmToken);
+  }
+
+  Future<void> _saveTokenToDatabase(String token) async {
+    try {
+      final userId = SupabaseManager.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      await SupabaseManager.client
+          .from('profiles')
+          .update({'fcm_token': token}).eq('id', userId);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saat menyimpan FCM token: $e');
+      }
+    }
   }
 }

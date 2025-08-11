@@ -14,17 +14,17 @@ import 'package:gasra_monitoring/core/services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await NotificationService().initialize();
   await Supabase.initialize(
     url:
         'https://lyyttxtfffyzfcifcldf.supabase.co/', // Ganti dengan URL Supabase kamu
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5eXR0eHRmZmZ5emZjaWZjbGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNjIwMTcsImV4cCI6MjA2ODgzODAxN30.oCzbljhK0T1yNDu4iTRjIAkArKbqYhGWP9chNyS-lqo', // Ganti dengan anon key kamu
   );
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  await NotificationService().initialize();
+
   runApp(
     MultiProvider(
       providers: [
