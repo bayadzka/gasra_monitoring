@@ -2,8 +2,11 @@
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
+import 'package:gasra_monitoring/features/maintanance/pages/maintenance_list_page.dart';
+import 'package:gasra_monitoring/main.dart';
 
 class NotificationService {
   final _firebaseMessaging = FirebaseMessaging.instance;
@@ -25,21 +28,36 @@ class NotificationService {
     await _firebaseMessaging.requestPermission();
     await _initializeLocalNotifications();
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+    // [BARU] Menambahkan listener untuk notifikasi yang di-klik saat app tertutup/background
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+  }
+
+  // [BARU] Fungsi ini akan berjalan saat pengguna menekan notifikasi
+  void _handleMessageOpenedApp(RemoteMessage message) {
+    if (kDebugMode) {
+      print("Notifikasi di-klik!");
+      print("Data: ${message.data}");
+    }
+
+    // Cek apakah ada data report_id atau result_id di dalam notifikasi
+    if (message.data['report_id'] != null ||
+        message.data['result_id'] != null) {
+      // Arahkan pengguna ke halaman "Perlu Perbaikan"
+      // Kita menggunakan navigatorKey karena service ini berjalan di luar context widget
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MaintenanceListPage()),
+        (route) => route.isFirst,
+      );
+    }
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage? message) async {
-    // [FIX] Tambahkan null check yang lebih kuat di awal
     if (message == null || message.notification == null) {
       if (kDebugMode) {
         print('Pesan foreground diterima tapi tidak ada notifikasi.');
       }
       return;
-    }
-
-    if (kDebugMode) {
-      print('Pesan notifikasi diterima di foreground!');
-      print('Judul: ${message.notification!.title}');
-      print('Isi: ${message.notification!.body}');
     }
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(

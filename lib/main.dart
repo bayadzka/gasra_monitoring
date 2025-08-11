@@ -11,24 +11,28 @@ import 'package:firebase_core/firebase_core.dart'; // Import Firebase
 import 'firebase_options.dart';
 import 'package:gasra_monitoring/core/services/notification_service.dart';
 
+// [PENTING] GlobalKey ini memungkinkan kita navigasi dari mana saja
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Inisialisasi service notifikasi di awal
   await NotificationService().initialize();
+
   await Supabase.initialize(
-    url:
-        'https://lyyttxtfffyzfcifcldf.supabase.co/', // Ganti dengan URL Supabase kamu
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5eXR0eHRmZmZ5emZjaWZjbGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNjIwMTcsImV4cCI6MjA2ODgzODAxN30.oCzbljhK0T1yNDu4iTRjIAkArKbqYhGWP9chNyS-lqo', // Ganti dengan anon key kamu
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   runApp(
     MultiProvider(
       providers: [
-        // [DIUBAH] AuthProvider ditambahkan di sini
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: const MyApp(),
@@ -42,13 +46,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // [PENTING] Pasang navigatorKey di sini
+      navigatorKey: navigatorKey,
       title: 'GASRA Monitoring',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/auth': (context) => const AuthGatePage(), // Ganti '/login'
+        '/auth': (context) => const AuthGatePage(),
         '/home': (context) => const HomePage(),
       },
     );
