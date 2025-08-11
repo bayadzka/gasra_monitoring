@@ -196,9 +196,11 @@ class _HistoryPageState extends State<HistoryPage> {
                             title = inspection['storages']['storage_code'];
                             icon = Icons.inventory_2_outlined;
                           }
-                          final date = DateTime.parse(inspection['created_at']);
-                          final formattedDate =
-                              DateFormat('d MMMM yyyy, HH:mm').format(date);
+                          final utcDate =
+                              DateTime.parse(inspection['created_at']);
+                          final localDate = utcDate.toLocal();
+                          final formattedDate = DateFormat('d MMMM yyyy, HH:mm')
+                              .format(localDate);
 
                           // [DIUBAH] Ambil nama penginspeksi
                           final inspectorName = (inspection['profiles'] != null)

@@ -15,22 +15,21 @@ class WashingLogPage extends StatefulWidget {
 }
 
 class _WashingLogPageState extends State<WashingLogPage> {
-  // [DIUBAH] State untuk menyimpan daftar unit, tanggal, dan catatan
   List<Map<String, dynamic>> _selectedStorages = [];
-  DateTime _selectedDate = DateTime.now();
+  DateTime _displayDate = DateTime.now();
   final TextEditingController _notesController = TextEditingController();
   bool _isSubmitting = false;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: _displayDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null && picked != _displayDate) {
       setState(() {
-        _selectedDate = picked;
+        _displayDate = picked;
       });
     }
   }
@@ -52,13 +51,13 @@ class _WashingLogPageState extends State<WashingLogPage> {
       final userId = SupabaseManager.client.auth.currentUser?.id;
       if (userId == null) throw Exception("User tidak login.");
 
-      // Buat daftar payload untuk dikirim ke database
+      // [DIUBAH] Payload sekarang tidak mengirim 'washed_at'
       final payload = _selectedStorages.map((storage) {
         return {
           'storage_id': storage['id'],
           'washed_by_id': userId,
           'notes': _notesController.text,
-          'washed_at': _selectedDate.toIso8601String(),
+          // Baris 'washed_at' dihapus dari sini
         };
       }).toList();
 
@@ -107,8 +106,6 @@ class _WashingLogPageState extends State<WashingLogPage> {
               const Text("Unit Dicuci",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),
-
-              // [DIUBAH] Tombol untuk membuka halaman pemilihan
               OutlinedButton.icon(
                 icon: const Icon(Icons.add_task_outlined),
                 label: Text(_selectedStorages.isEmpty
@@ -118,14 +115,12 @@ class _WashingLogPageState extends State<WashingLogPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: () async {
-                  // Buka halaman pemilihan dan tunggu hasilnya
                   final result =
                       await Navigator.push<List<Map<String, dynamic>>>(
                     context,
                     MaterialPageRoute(
                         builder: (_) => const WashingSelectionPage()),
                   );
-                  // Jika ada hasil, update state
                   if (result != null) {
                     setState(() {
                       _selectedStorages = result;
@@ -133,11 +128,9 @@ class _WashingLogPageState extends State<WashingLogPage> {
                   }
                 },
               ),
-
-              // [BARU] Tampilkan daftar unit yang sudah dipilih
               if (_selectedStorages.isNotEmpty)
                 Container(
-                  height: 150, // Batasi tinggi agar bisa di-scroll
+                  height: 150,
                   margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
@@ -151,10 +144,7 @@ class _WashingLogPageState extends State<WashingLogPage> {
                         .toList(),
                   ),
                 ),
-
               const SizedBox(height: 24),
-
-              // [BARU] Input Tanggal Pencucian
               const Text("Tanggal Pencucian",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),
@@ -167,14 +157,13 @@ class _WashingLogPageState extends State<WashingLogPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(DateFormat('d MMMM yyyy').format(_selectedDate)),
+                      Text(DateFormat('d MMMM yyyy').format(_displayDate)),
                       const Icon(Icons.calendar_today),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-
               const Text("Catatan (Opsional)",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),

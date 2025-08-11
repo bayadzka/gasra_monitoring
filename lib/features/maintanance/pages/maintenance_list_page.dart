@@ -200,9 +200,13 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
                             final unit = filteredList[index];
                             final title = unit['unit_code'];
                             final itemCount = unit['item_count'];
-                            final date = DateTime.parse(unit['latest_report']);
+                            final utcDate =
+                                DateTime.parse(unit['latest_report']);
+                            final localDate =
+                                utcDate.toLocal(); // <-- Tambahkan baris ini
                             final formattedDate =
-                                DateFormat('d MMMM yyyy, HH:mm').format(date);
+                                DateFormat('d MMMM yyyy, HH:mm')
+                                    .format(localDate); // Gunakan localDate
 
                             IconData icon = Icons.article;
                             if (unit['type'] == 'Head')

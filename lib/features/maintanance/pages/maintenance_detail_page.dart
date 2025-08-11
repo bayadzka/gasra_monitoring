@@ -67,9 +67,11 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                     'Masalah Tidak Dikenal';
                 final notes = item['problem_notes'] ?? 'Tidak ada keterangan.';
                 final reportedBy = item['reported_by'] ?? 'N/A';
-                final date = DateTime.parse(item['reported_at']);
-                final formattedDate =
-                    DateFormat('d MMMM yyyy, HH:mm').format(date);
+                // KODE BARU
+                final utcDate = DateTime.parse(item['reported_at']);
+                final localDate = utcDate.toLocal();
+                final formattedDate = DateFormat('d MMMM yyyy, HH:mm')
+                    .format(localDate); // Gunakan localDate
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),

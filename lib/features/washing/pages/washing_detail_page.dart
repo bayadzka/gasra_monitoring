@@ -71,9 +71,10 @@ class _WashingDetailPageState extends State<WashingDetailPage> {
               final notes = record['notes']?.isNotEmpty == true
                   ? record['notes']
                   : 'Tidak ada catatan.';
-              final date = DateTime.parse(record['washed_at']);
-              final formattedDate =
-                  DateFormat('d MMMM yyyy, HH:mm').format(date);
+              final utcDate = DateTime.parse(record['washed_at']);
+              final localDate = utcDate.toLocal(); // <-- Tambahkan baris ini
+              final formattedDate = DateFormat('d MMMM yyyy, HH:mm')
+                  .format(localDate); // Gunakan localDate
 
               return Card(
                 elevation: 2,

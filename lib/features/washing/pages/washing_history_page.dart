@@ -39,11 +39,14 @@ class _WashingHistoryPageState extends State<WashingHistoryPage> {
 
   Future<List<Map<String, dynamic>>> _fetchWashingHistory() async {
     final supabase = SupabaseManager.client;
+
+    // [FIX] Mengubah join menjadi LEFT JOIN agar semua data tampil
     final response = await supabase
         .from('washing_history')
         .select(
-            '*, washed_by:profiles(name), storage:storages(id, storage_code)')
+            '*, washed_by:profiles!left(name), storage:storages!left(id, storage_code)')
         .order('washed_at', ascending: false);
+
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -75,6 +78,7 @@ class _WashingHistoryPageState extends State<WashingHistoryPage> {
 
           final allRecords = snapshot.data!;
           final filteredRecords = allRecords.where((record) {
+            // Pastikan null check di sini
             final storageCode = record['storage']?['storage_code'] ?? '';
             return storageCode
                 .toLowerCase()
@@ -115,20 +119,24 @@ class _WashingHistoryPageState extends State<WashingHistoryPage> {
                           itemBuilder: (context, index) {
                             final record = filteredRecords[index];
                             final storageData = record['storage'];
-                            if (storageData == null)
-                              return const SizedBox.shrink();
 
-                            final storageCode =
-                                storageData['storage_code'] ?? 'N/A';
-                            final storageId = storageData['id'].toString();
+                            // Jika storageData null, tampilkan pesan error atau kode default
+                            final storageCode = storageData?['storage_code'] ??
+                                'Unit Tidak Ditemukan';
+                            final storageId =
+                                storageData?['id']?.toString() ?? '';
+
                             final washedBy = record['washed_by']?['name'] ??
                                 'Tidak diketahui';
                             final notes = record['notes']?.isNotEmpty == true
                                 ? record['notes']
                                 : 'Tidak ada catatan.';
-                            final date = DateTime.parse(record['washed_at']);
+
+                            final utcDate = DateTime.parse(record['washed_at']);
+                            final localDate = utcDate.toLocal();
                             final formattedDate =
-                                DateFormat('d MMMM yyyy, HH:mm').format(date);
+                                DateFormat('d MMMM yyyy, HH:mm')
+                                    .format(localDate);
 
                             return Card(
                               elevation: 2,
@@ -136,15 +144,17 @@ class _WashingHistoryPageState extends State<WashingHistoryPage> {
                                   horizontal: 8, vertical: 6),
                               child: ListTile(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => WashingDetailPage(
-                                        storageId: storageId,
-                                        storageCode: storageCode,
+                                  if (storageId.isNotEmpty) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => WashingDetailPage(
+                                          storageId: storageId,
+                                          storageCode: storageCode,
+                                        ),
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  }
                                 },
                                 contentPadding: const EdgeInsets.all(16.0),
                                 title: Text("Storage: $storageCode",

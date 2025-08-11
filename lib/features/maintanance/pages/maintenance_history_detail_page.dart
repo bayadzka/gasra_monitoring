@@ -49,8 +49,10 @@ class MaintenanceHistoryDetailPage extends StatelessWidget {
     final problemNotes = record['problem_notes'] ?? 'N/A';
     final repairNotes = record['repair_notes'] ?? 'Tidak ada catatan.';
     final repairedBy = record['repaired_by'] ?? 'Tidak diketahui';
-    final date = DateTime.parse(record['repaired_at']);
-    final formattedDate = DateFormat('d MMMM yyyy, HH:mm').format(date);
+    final utcDate = DateTime.parse(record['repaired_at']);
+    final localDate = utcDate.toLocal(); // <-- Tambahkan baris ini
+    final formattedDate =
+        DateFormat('d MMMM yyyy, HH:mm').format(localDate); // Gunakan localDate
     final problemPhotoUrl = record['problem_photo_url'];
     final repairPhotoUrl = record['repair_photo_url'];
 
