@@ -46,14 +46,11 @@ class _HeadListPageState extends State<HeadListPage> {
 
   // DIUBAH TOTAL: Fungsi ini sekarang memanggil RPC dan melakukan filter di sisi klien
   Future<List<Map<String, dynamic>>> _fetchHeadsWithStatus() async {
-    // 1. Panggil RPC untuk mendapatkan semua data head dengan status
     final response = await SupabaseManager.client.rpc('get_heads_with_status');
-
-    // 2. Filter hasilnya berdasarkan subtype yang dipilih di halaman sebelumnya
     final allHeads = List<Map<String, dynamic>>.from(response);
     final subtype = widget.headSubtype;
 
-    return allHeads.where((head) {
+    final filteredHeads = allHeads.where((head) {
       final String type = head['type'] ?? '';
       final int feet = head['feet'] ?? 0;
 
@@ -66,6 +63,19 @@ class _HeadListPageState extends State<HeadListPage> {
       }
       return false;
     }).toList();
+
+    // [FIX] Logika pengurutan numerik ditambahkan di sini
+    filteredHeads.sort((a, b) {
+      final String codeA =
+          a['head_code']?.replaceAll(RegExp(r'[^0-9]'), '') ?? '99999';
+      final String codeB =
+          b['head_code']?.replaceAll(RegExp(r'[^0-9]'), '') ?? '99999';
+      final int numA = int.tryParse(codeA) ?? 99999;
+      final int numB = int.tryParse(codeB) ?? 99999;
+      return numA.compareTo(numB);
+    });
+
+    return filteredHeads;
   }
 
   // BARU: Fungsi untuk menangani logika saat item dipilih

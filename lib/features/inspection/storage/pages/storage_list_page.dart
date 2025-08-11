@@ -57,10 +57,19 @@ class _StorageListPageState extends State<StorageListPage> {
     final feetValue = int.tryParse(widget.storageType.split(' ')[0]);
     if (feetValue == null) return [];
 
-    return allStorages.where((storage) {
+    final filteredStorages = allStorages.where((storage) {
       final int feet = storage['feet'] ?? 0;
       return feet == feetValue;
     }).toList();
+
+    // [FIX] Logika pengurutan numerik ditambahkan di sini
+    filteredStorages.sort((a, b) {
+      final int numA = int.tryParse(a['storage_code'] ?? '99999') ?? 99999;
+      final int numB = int.tryParse(b['storage_code'] ?? '99999') ?? 99999;
+      return numA.compareTo(numB);
+    });
+
+    return filteredStorages;
   }
 
   // BARU

@@ -46,6 +46,7 @@ class _ChassisListPageState extends State<ChassisListPage> {
 
   // DIUBAH TOTAL
   Future<List<Map<String, dynamic>>> _fetchChassisWithStatus() async {
+    // 1. Ambil data seperti biasa (tidak ada yang diubah di sini)
     final response =
         await SupabaseManager.client.rpc('get_chassis_with_status');
     final allChassis = List<Map<String, dynamic>>.from(response);
@@ -53,10 +54,20 @@ class _ChassisListPageState extends State<ChassisListPage> {
     final feetValue = int.tryParse(widget.chassisSubtype.split(' ')[0]);
     if (feetValue == null) return [];
 
-    return allChassis.where((chassis) {
+    final filteredChassis = allChassis.where((chassis) {
       final int feet = chassis['feet'] ?? 0;
       return feet == feetValue;
     }).toList();
+
+    // 2. [FIX] Tambahkan logika pengurutan di sini
+    filteredChassis.sort((a, b) {
+      // Coba ubah kode menjadi angka, jika gagal, anggap sebagai nilai besar
+      final int numA = int.tryParse(a['chassis_code'] ?? '99999') ?? 99999;
+      final int numB = int.tryParse(b['chassis_code'] ?? '99999') ?? 99999;
+      return numA.compareTo(numB); // Urutkan sebagai angka
+    });
+
+    return filteredChassis;
   }
 
   // BARU
