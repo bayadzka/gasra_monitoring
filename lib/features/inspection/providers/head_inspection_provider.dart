@@ -12,7 +12,6 @@ class HeadInspectionProvider extends BaseInspectionProvider {
   List<InspectionItem> allHeadItems = [];
   Map<String, List<InspectionItem>> groupedHeadItems = {};
 
-  // [FIX] Tambahkan override ini untuk memenuhi "kontrak"
   @override
   Map<String, List<InspectionItem>> get groupedItems => groupedHeadItems;
   @override
@@ -21,7 +20,6 @@ class HeadInspectionProvider extends BaseInspectionProvider {
   String? get selectedVehicleCode => selectedHeadCode;
   @override
   List<InspectionItem> get allItems => allHeadItems;
-
   @override
   bool isLoading = false;
   @override
@@ -39,7 +37,7 @@ class HeadInspectionProvider extends BaseInspectionProvider {
           .select()
           .eq('category', 'Head')
           .eq('subtype', subtype)
-          .order('name', ascending: true); // Urutkan sementara berdasarkan nama
+          .order('name', ascending: true);
 
       allHeadItems = (response as List)
           .map((item) => InspectionItem(
@@ -53,10 +51,7 @@ class HeadInspectionProvider extends BaseInspectionProvider {
               ))
           .toList();
 
-      // [FIX 2] Lakukan pengurutan kustom setelah data diambil
       _customSortItems();
-
-      // [FIX 1] Lakukan pengelompokan berdasarkan page_title
       _groupItems();
       _initializeResults();
     } catch (e) {
@@ -67,10 +62,8 @@ class HeadInspectionProvider extends BaseInspectionProvider {
     }
   }
 
-  // [BARU] Fungsi untuk mengurutkan item secara numerik
   void _customSortItems() {
     allHeadItems.sort((a, b) {
-      // Fungsi untuk mengekstrak angka dari nama item
       int extractNumber(String text) {
         final match = RegExp(r'(\d+)').firstMatch(text);
         return match != null ? int.parse(match.group(1)!) : 0;
@@ -80,7 +73,6 @@ class HeadInspectionProvider extends BaseInspectionProvider {
     });
   }
 
-  // [DIUBAH] Mengelompokkan item berdasarkan 'page_title' dari database
   void _groupItems() {
     groupedHeadItems.clear();
     for (var item in allHeadItems) {
@@ -98,20 +90,33 @@ class HeadInspectionProvider extends BaseInspectionProvider {
     }
   }
 
+  // [DIUBAH] Fungsi ini sekarang membersihkan data saat kondisi "baik"
   @override
   void updateCondition(String itemId, String condition) {
     if (inspectionResults.containsKey(itemId)) {
       inspectionResults[itemId]!.condition = condition;
+
+      // [FIX] Jika kondisi diubah menjadi "baik", hapus keterangan dan foto
+      if (condition == 'baik') {
+        inspectionResults[itemId]!.notesController.clear();
+        inspectionResults[itemId]!.problemImageFile = null;
+      }
+
       notifyListeners();
     }
   }
 
+  // [DIUBAH] Fungsi ini sekarang juga membersihkan data
   @override
   void setAllConditionsToBaik(String category) {
     final itemsToUpdate = groupedHeadItems[category] ?? [];
     for (var item in itemsToUpdate) {
       if (inspectionResults.containsKey(item.id)) {
         inspectionResults[item.id]!.condition = 'baik';
+
+        // [FIX] Hapus juga keterangan dan foto saat "Baik Semua" ditekan
+        inspectionResults[item.id]!.notesController.clear();
+        inspectionResults[item.id]!.problemImageFile = null;
       }
     }
     notifyListeners();
@@ -144,7 +149,6 @@ class HeadInspectionProvider extends BaseInspectionProvider {
       throw Exception('User tidak login atau Head tidak dipilih.');
     }
     try {
-      // [FIX] Hanya 'head_id' yang dikirim sebagai String (UUID)
       final inspectionData = {
         'head_id': selectedHeadId,
         'inspector_id': user.id,
@@ -206,7 +210,6 @@ class HeadInspectionProvider extends BaseInspectionProvider {
       result.notesController.dispose();
     }
     inspectionResults.clear();
-    // Kita tidak panggil notifyListeners di sini agar tidak menyebabkan error saat dispose
   }
 
   @override

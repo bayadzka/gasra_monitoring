@@ -103,16 +103,28 @@ class ChassisInspectionProvider extends BaseInspectionProvider {
   void updateCondition(String itemId, String condition) {
     if (inspectionResults.containsKey(itemId)) {
       inspectionResults[itemId]!.condition = condition;
+
+      // [FIX] Jika kondisi diubah menjadi "baik", hapus keterangan dan foto
+      if (condition == 'baik') {
+        inspectionResults[itemId]!.notesController.clear();
+        inspectionResults[itemId]!.problemImageFile = null;
+      }
+
       notifyListeners();
     }
   }
 
+  // [DIUBAH] Fungsi ini sekarang juga membersihkan data
   @override
   void setAllConditionsToBaik(String category) {
     final itemsToUpdate = groupedChassisItems[category] ?? [];
     for (var item in itemsToUpdate) {
       if (inspectionResults.containsKey(item.id)) {
         inspectionResults[item.id]!.condition = 'baik';
+
+        // [FIX] Hapus juga keterangan dan foto saat "Baik Semua" ditekan
+        inspectionResults[item.id]!.notesController.clear();
+        inspectionResults[item.id]!.problemImageFile = null;
       }
     }
     notifyListeners();
