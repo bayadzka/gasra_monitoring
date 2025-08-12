@@ -51,13 +51,12 @@ class _WashingLogPageState extends State<WashingLogPage> {
       final userId = SupabaseManager.client.auth.currentUser?.id;
       if (userId == null) throw Exception("User tidak login.");
 
-      // [DIUBAH] Payload sekarang tidak mengirim 'washed_at'
       final payload = _selectedStorages.map((storage) {
         return {
           'storage_id': storage['id'],
           'washed_by_id': userId,
           'notes': _notesController.text,
-          // Baris 'washed_at' dihapus dari sini
+          // 'washed_at' akan diisi default now() oleh database
         };
       }).toList();
 
@@ -84,6 +83,13 @@ class _WashingLogPageState extends State<WashingLogPage> {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  // [BARU] Fungsi untuk menghapus unit dari daftar pilihan
+  void _removeStorage(Map<String, dynamic> storageToRemove) {
+    setState(() {
+      _selectedStorages.removeWhere((s) => s['id'] == storageToRemove['id']);
+    });
   }
 
   @override
@@ -119,7 +125,10 @@ class _WashingLogPageState extends State<WashingLogPage> {
                       await Navigator.push<List<Map<String, dynamic>>>(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const WashingSelectionPage()),
+                        // [DIUBAH] Kirim daftar yang sudah dipilih ke halaman pemilihan
+                        builder: (_) => WashingSelectionPage(
+                              initialSelection: _selectedStorages,
+                            )),
                   );
                   if (result != null) {
                     setState(() {
@@ -136,12 +145,18 @@ class _WashingLogPageState extends State<WashingLogPage> {
                       border: Border.all(color: Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(8)),
                   child: ListView(
-                    children: _selectedStorages
-                        .map((storage) => ListTile(
-                              title: Text(storage['storage_code']),
-                              dense: true,
-                            ))
-                        .toList(),
+                    children: _selectedStorages.map((storage) {
+                      // [DIUBAH] ListTile sekarang memiliki tombol hapus
+                      return ListTile(
+                        title: Text(storage['storage_code']),
+                        dense: true,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close,
+                              color: Colors.red, size: 20),
+                          onPressed: () => _removeStorage(storage),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               const SizedBox(height: 24),

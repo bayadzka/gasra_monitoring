@@ -8,10 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 
-// [DIUBAH] Menambahkan titleController untuk judul masalah kustom
+// Helper class (tidak berubah)
 class ReportItem {
   final TextEditingController titleController = TextEditingController();
-  String? selectedItemId; // Ini menjadi opsional
+  String? selectedItemId;
   final TextEditingController notesController = TextEditingController();
   File? problemImageFile;
 
@@ -49,7 +49,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
   void initState() {
     super.initState();
     _inspectionItemsFuture = _fetchInspectionItems();
-    // Tidak perlu listener di sini karena kita menggunakan Form onChanged
   }
 
   @override
@@ -61,37 +60,44 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
     super.dispose();
   }
 
-  // [DIUBAH] Logika validasi sekarang fokus pada judul
   bool _isFormValid() {
     if (_reportItems.isEmpty) return false;
-    // Cek apakah setiap item setidaknya memiliki judul yang diisi
     return _reportItems
         .every((item) => item.titleController.text.trim().isNotEmpty);
   }
 
+  // [DIUBAH] Fungsi ini sekarang menyertakan filter subtype
   Future<List<Map<String, dynamic>>> _fetchInspectionItems() async {
-    // Fungsi ini sudah bagus, tidak perlu diubah
-    String assetType = '';
-    if (widget.unitCategory == 'heads')
-      assetType = 'Head';
-    else if (widget.unitCategory == 'chassis')
-      assetType = 'Chassis';
-    else if (widget.unitCategory == 'storages') assetType = 'Storage';
+    String categoryName = '';
+    if (widget.unitCategory == 'heads') {
+      categoryName = 'Head';
+    } else if (widget.unitCategory == 'chassis') {
+      categoryName = 'Chassis';
+    } else if (widget.unitCategory == 'storages') {
+      categoryName = 'Storage';
+    }
 
-    if (assetType.isEmpty) return [];
+    if (categoryName.isEmpty) return [];
 
-    final response = await SupabaseManager.client
+    // Membangun query dasar
+    var query = SupabaseManager.client
         .from('inspection_items')
         .select('id, name')
-        .eq('category', assetType);
-    // Note: Anda bisa menambahkan filter 'subtype' di sini jika diperlukan
+        .eq('category', categoryName);
+
+    // [FIX] Tambahkan filter subtype HANYA untuk Head dan Chassis
+    if (categoryName == 'Head' || categoryName == 'Chassis') {
+      query = query.eq('subtype', widget.unitSubtype);
+    }
+
+    final response = await query.order('name', ascending: true);
 
     final List<Map<String, dynamic>> items =
         List<Map<String, dynamic>>.from(response);
-    items.sort((a, b) => (a['name'] as String).compareTo(a['name']));
     return items;
   }
 
+  // Sisa kode tidak ada perubahan
   void _addItem() {
     setState(() {
       _reportItems.add(ReportItem());
@@ -106,7 +112,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
     });
   }
 
-  // Fungsi _pickImage dan _showPhotoViewer tidak ada perubahan
   Future<void> _pickImage(ReportItem item) async {
     final picker = ImagePicker();
     final ImageSource? source = await showModalBottomSheet<ImageSource>(
@@ -184,7 +189,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
   }
 
   Future<void> _submitReport() async {
-    // Trigger validasi form
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -207,33 +211,29 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
           final imageFile = item.problemImageFile!;
           final fileName =
               'masalah/${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-          // [DIUBAH] Ganti 'attachments' menjadi 'bukti-inspeksi'
           await supabase.storage
               .from('bukti-inspeksi')
               .upload(fileName, imageFile);
           photoUrl =
               supabase.storage.from('bukti-inspeksi').getPublicUrl(fileName);
         }
+
         final unitIdKey =
             '${widget.unitCategory.substring(0, widget.unitCategory.length - 1)}_id';
 
-        // [DIUBAH] Payload sekarang menyertakan custom_title
         payload.add({
           'reported_by_id': userId,
-          'custom_title': item.titleController.text.trim(), // Judul kustom
-          'item_id': item.selectedItemId, // Item terkait (bisa null)
+          'custom_title': item.titleController.text.trim(),
+          'item_id': item.selectedItemId,
           'problem_notes': item.notesController.text.trim(),
           'deadline_date': _selectedDeadline?.toIso8601String(),
           unitIdKey: widget.unitId,
           'problem_photo_url': photoUrl,
-          'status': 'reported', // Status awal
+          'status': 'reported',
         });
       }
 
-      await supabase
-          .from('problem_reports')
-          .insert(payload); // Pastikan tabel 'problem_reports'
+      await supabase.from('problem_reports').insert(payload);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -273,7 +273,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
             return Center(child: Text("Error: ${snapshot.error}"));
           }
 
-          // Bahkan jika tidak ada item, form tetap bisa digunakan
           final inspectionItems = snapshot.data ?? [];
 
           return Form(
@@ -316,7 +315,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
     );
   }
 
-  // [DIUBAH TOTAL] Kartu item laporan sekarang lebih fleksibel
   Widget _buildReportItemCard(int index, ReportItem reportItem,
       List<Map<String, dynamic>> inspectionItems) {
     return Card(
@@ -358,7 +356,7 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
               hint: const Text('Pilih item terkait (Opsional)'),
               items: inspectionItems.map((item) {
                 return DropdownMenuItem<String>(
-                  value: item['id'].toString(), // Pastikan value adalah String
+                  value: item['id'].toString(),
                   child: Text(item['name'], overflow: TextOverflow.ellipsis),
                 );
               }).toList(),
@@ -367,7 +365,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
                   reportItem.selectedItemId = value;
                 });
               },
-              // validator dihapus karena opsional
               decoration: const InputDecoration(border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
@@ -378,7 +375,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
                 labelText: 'Detail Keterangan',
                 border: OutlineInputBorder(),
               ),
-              // validator bisa ditambahkan jika detail juga wajib
             ),
             const SizedBox(height: 12),
             if (reportItem.problemImageFile != null)
@@ -427,7 +423,6 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
     );
   }
 
-  // Widget _buildDeadlinePicker tidak ada perubahan
   Widget _buildDeadlinePicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -3,10 +3,16 @@
 import 'package:flutter/material.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
 import 'package:gasra_monitoring/core/theme.dart';
-import 'package:intl/intl.dart'; // [FIX] Tambahkan import ini
+import 'package:intl/intl.dart';
 
 class WashingSelectionPage extends StatefulWidget {
-  const WashingSelectionPage({super.key});
+  // [BARU] Menerima daftar pilihan awal dari halaman sebelumnya
+  final List<Map<String, dynamic>>? initialSelection;
+
+  const WashingSelectionPage({
+    super.key,
+    this.initialSelection,
+  });
 
   @override
   State<WashingSelectionPage> createState() => _WashingSelectionPageState();
@@ -16,12 +22,19 @@ class _WashingSelectionPageState extends State<WashingSelectionPage> {
   late Future<List<Map<String, dynamic>>> _storagesFuture;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final List<Map<String, dynamic>> _selectedStorages = [];
+
+  // [DIUBAH] Daftar ini akan diisi dengan pilihan awal saat halaman dimuat
+  late List<Map<String, dynamic>> _selectedStorages;
 
   @override
   void initState() {
     super.initState();
     _storagesFuture = _fetchStorages();
+
+    // [FIX] Isi daftar pilihan dengan data dari halaman sebelumnya
+    _selectedStorages =
+        List<Map<String, dynamic>>.from(widget.initialSelection ?? []);
+
     _searchController.addListener(() {
       if (mounted) setState(() => _searchQuery = _searchController.text);
     });
@@ -34,9 +47,20 @@ class _WashingSelectionPageState extends State<WashingSelectionPage> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchStorages() async {
+    // [FIX] Query Anda sudah benar, namun nama RPC mungkin perlu disesuaikan jika berbeda
+    // Pastikan RPC 'get_storages_with_last_washed_date' ada di Supabase Anda
     final response =
         await SupabaseManager.client.rpc('get_storages_with_last_washed_date');
-    return List<Map<String, dynamic>>.from(response ?? []);
+    final allStorages = List<Map<String, dynamic>>.from(response ?? []);
+
+    // Urutkan secara numerik
+    allStorages.sort((a, b) {
+      final int numA = int.tryParse(a['storage_code'] ?? '99999') ?? 99999;
+      final int numB = int.tryParse(b['storage_code'] ?? '99999') ?? 99999;
+      return numA.compareTo(numB);
+    });
+
+    return allStorages;
   }
 
   @override
@@ -99,12 +123,14 @@ class _WashingSelectionPageState extends State<WashingSelectionPage> {
                     Color subtitleColor = Colors.red;
 
                     if (lastWashed != null) {
-                      final lastWashedDate = DateTime.parse(lastWashed);
+                      final lastWashedDate =
+                          DateTime.parse(lastWashed).toLocal();
                       final difference =
                           DateTime.now().difference(lastWashedDate);
                       subtitleText =
                           'Terakhir dicuci: ${DateFormat('d MMM yyyy').format(lastWashedDate)}';
 
+                      // Logika warna bisa disesuaikan jika perlu
                       if (difference.inDays <= 7) {
                         subtitleColor = Colors.green;
                       }
@@ -145,11 +171,10 @@ class _WashingSelectionPageState extends State<WashingSelectionPage> {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
-          onPressed: _selectedStorages.isNotEmpty
-              ? () {
-                  Navigator.pop(context, _selectedStorages);
-                }
-              : null,
+          onPressed: () {
+            // Tombol "Pilih" sekarang selalu aktif
+            Navigator.pop(context, _selectedStorages);
+          },
         ),
       ),
     );
