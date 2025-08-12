@@ -3,7 +3,6 @@ import 'package:gasra_monitoring/core/theme.dart';
 import 'package:gasra_monitoring/features/auth/auth_gate_page.dart';
 import 'package:gasra_monitoring/splash_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:gasra_monitoring/features/dashboard/home_page.dart';
 import 'package:provider/provider.dart';
 import 'package:gasra_monitoring/features/auth/providers/auth_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -55,7 +54,6 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/auth': (context) => const AuthGatePage(),
-        '/home': (context) => const HomePage(),
       },
     );
   }

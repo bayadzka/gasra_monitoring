@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
 import 'package:gasra_monitoring/core/theme.dart';
 import 'package:gasra_monitoring/features/auth/providers/auth_provider.dart';
-import 'package:gasra_monitoring/features/dashboard/home_page.dart';
+import 'package:gasra_monitoring/navigation/main_navigation_page.dart';
 import 'package:provider/provider.dart';
 import 'package:gasra_monitoring/core/services/notification_service.dart';
 
@@ -48,7 +48,7 @@ class _LoginFormState extends State<LoginForm> {
         await NotificationService().getTokenAndSave();
 
         Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const HomePage()),
+            MaterialPageRoute(builder: (_) => const MainNavigationPage()),
             (route) => false);
       }
     } catch (e) {

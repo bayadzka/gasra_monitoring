@@ -1,7 +1,8 @@
-// lib/features/splash_screen.dart
+// lib/splash_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:gasra_monitoring/features/auth/providers/auth_provider.dart';
+import 'package:gasra_monitoring/navigation/main_navigation_page.dart'; // [BARU] Import halaman navigasi baru
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,20 +21,21 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Tunggu frame pertama selesai di-build
-    await Future.delayed(Duration.zero);
+    await Future.delayed(
+        const Duration(milliseconds: 1500)); // Beri sedikit jeda
     if (!mounted) return;
 
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
-      // Jika ada sesi, muat profil pengguna
       await context.read<AuthProvider>().loadUserProfile();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        // [FIX] Arahkan ke MainNavigationPage, bukan '/home'
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainNavigationPage()),
+        );
       }
     } else {
-      // Jika tidak ada sesi, arahkan ke halaman gerbang otentikasi
       Navigator.of(context).pushReplacementNamed('/auth');
     }
   }
@@ -45,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ganti dengan logo Anda jika path berbeda
+            // Anda bisa tambahkan logo di sini jika mau
             // Image.asset('assets/images/logo.png', height: 120),
             SizedBox(height: 20),
             Text(
