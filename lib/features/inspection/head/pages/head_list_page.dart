@@ -83,7 +83,7 @@ class _HeadListPageState extends State<HeadListPage> {
     final lastInspectionDateString = head['last_inspection_date'];
     bool proceed = true; // Defaultnya, kita lanjutkan navigasi
 
-    if (lastInspectionDateString != null) {
+    if (lastInspectionDateString != null && !widget.isForReport) {
       final lastInspectionDate = DateTime.parse(lastInspectionDateString);
       final now = DateTime.now();
 

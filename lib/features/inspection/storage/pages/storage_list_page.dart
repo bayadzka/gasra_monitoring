@@ -77,7 +77,7 @@ class _StorageListPageState extends State<StorageListPage> {
     final lastInspectionDateString = storage['last_inspection_date'];
     bool proceed = true;
 
-    if (lastInspectionDateString != null) {
+    if (lastInspectionDateString != null && !widget.isForReport) {
       final lastInspectionDate = DateTime.parse(lastInspectionDateString);
       final now = DateTime.now();
       final isSameDay = now.year == lastInspectionDate.year &&
