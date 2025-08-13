@@ -2,11 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:gasra_monitoring/core/theme.dart';
-import 'package:gasra_monitoring/features/maintanance/pages/repair_page.dart'; // [FIX] Import halaman repair_page.dart
+import 'package:gasra_monitoring/features/maintanance/pages/repair_page.dart';
 import 'package:intl/intl.dart';
 
 class MaintenanceDetailPage extends StatefulWidget {
-  // [DIUBAH] Menjadi StatefulWidget
   final String unitCode;
   final List<Map<String, dynamic>> items;
 
@@ -21,7 +20,6 @@ class MaintenanceDetailPage extends StatefulWidget {
 }
 
 class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
-  // [BARU] Kelola daftar item di dalam state agar bisa di-refresh
   late List<Map<String, dynamic>> _currentItems;
 
   @override
@@ -32,15 +30,16 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Mengurutkan item berdasarkan tanggal laporan terbaru
     _currentItems.sort((a, b) => DateTime.parse(b['reported_at'])
         .compareTo(DateTime.parse(a['reported_at'])));
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: Text("Detail Masalah: ${widget.unitCode}"),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
       body: _currentItems.isEmpty
           ? const Center(
@@ -61,30 +60,30 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
               itemBuilder: (context, index) {
                 final item = _currentItems[index];
                 final reportType = item['report_type'];
-
                 final title = item['custom_title'] ??
                     item['item_name'] ??
                     'Masalah Tidak Dikenal';
                 final notes = item['problem_notes'] ?? 'Tidak ada keterangan.';
                 final reportedBy = item['reported_by'] ?? 'N/A';
-                // KODE BARU
                 final utcDate = DateTime.parse(item['reported_at']);
                 final localDate = utcDate.toLocal();
-                final formattedDate = DateFormat('d MMMM yyyy, HH:mm')
-                    .format(localDate); // Gunakan localDate
+                final formattedDate =
+                    DateFormat('d MMMM yyyy, HH:mm').format(localDate);
 
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
                   elevation: 2,
+                  shadowColor: Colors.black.withOpacity(0.05),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: AppTextStyles.subtitle.copyWith(fontSize: 18),
-                        ),
+                        Text(title,
+                            style:
+                                AppTextStyles.subtitle.copyWith(fontSize: 18)),
                         const Divider(),
                         _buildDetailRow(Icons.person_outline, "Dilaporkan oleh",
                             reportedBy),
@@ -119,17 +118,12 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                             icon: const Icon(Icons.build_outlined, size: 18),
                             label: const Text("Catat Perbaikan"),
                             onPressed: () async {
-                              // [FIX] Navigasi ke RepairPage dan mengirim 'item' yang benar
                               final bool? result = await Navigator.push<bool>(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => RepairPage(
-                                    item:
-                                        item, // Mengirim seluruh data map 'item'
-                                  ),
+                                  builder: (_) => RepairPage(item: item),
                                 ),
                               );
-                              // [BARU] Jika perbaikan berhasil, hapus item dari daftar
                               if (result == true) {
                                 setState(() {
                                   _currentItems.removeAt(index);
@@ -137,10 +131,10 @@ class _MaintenanceDetailPageState extends State<MaintenanceDetailPage> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green[700],
+                                backgroundColor: Colors.orange,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8))),
+                                    borderRadius: BorderRadius.circular(12))),
                           ),
                         )
                       ],

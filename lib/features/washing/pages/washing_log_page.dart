@@ -56,7 +56,6 @@ class _WashingLogPageState extends State<WashingLogPage> {
           'storage_id': storage['id'],
           'washed_by_id': userId,
           'notes': _notesController.text,
-          // 'washed_at' akan diisi default now() oleh database
         };
       }).toList();
 
@@ -85,7 +84,6 @@ class _WashingLogPageState extends State<WashingLogPage> {
     }
   }
 
-  // [BARU] Fungsi untuk menghapus unit dari daftar pilihan
   void _removeStorage(Map<String, dynamic> storageToRemove) {
     setState(() {
       _selectedStorages.removeWhere((s) => s['id'] == storageToRemove['id']);
@@ -101,16 +99,17 @@ class _WashingLogPageState extends State<WashingLogPage> {
           showExitConfirmationDialog(context);
         },
         child: Scaffold(
+          backgroundColor: AppTheme.background,
           appBar: AppBar(
             title: const Text("Catat Pencucian Storage"),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: AppTheme.background,
+            foregroundColor: AppTheme.textPrimary,
+            elevation: 0,
           ),
           body: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              const Text("Unit Dicuci",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              _buildSectionTitle("Unit Dicuci"),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 icon: const Icon(Icons.add_task_outlined),
@@ -119,13 +118,14 @@ class _WashingLogPageState extends State<WashingLogPage> {
                     : "${_selectedStorages.length} unit dipilih"),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () async {
                   final result =
                       await Navigator.push<List<Map<String, dynamic>>>(
                     context,
                     MaterialPageRoute(
-                        // [DIUBAH] Kirim daftar yang sudah dipilih ke halaman pemilihan
                         builder: (_) => WashingSelectionPage(
                               initialSelection: _selectedStorages,
                             )),
@@ -143,10 +143,9 @@ class _WashingLogPageState extends State<WashingLogPage> {
                   margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(12)),
                   child: ListView(
                     children: _selectedStorages.map((storage) {
-                      // [DIUBAH] ListTile sekarang memiliki tombol hapus
                       return ListTile(
                         title: Text(storage['storage_code']),
                         dense: true,
@@ -160,11 +159,11 @@ class _WashingLogPageState extends State<WashingLogPage> {
                   ),
                 ),
               const SizedBox(height: 24),
-              const Text("Tanggal Pencucian",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              _buildSectionTitle("Tanggal Pencucian"),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () => _selectDate(context),
+                borderRadius: BorderRadius.circular(12),
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
@@ -179,8 +178,7 @@ class _WashingLogPageState extends State<WashingLogPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text("Catatan (Opsional)",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              _buildSectionTitle("Catatan (Opsional)"),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _notesController,
@@ -192,21 +190,25 @@ class _WashingLogPageState extends State<WashingLogPage> {
               ),
             ],
           ),
-          bottomNavigationBar: Padding(
+          bottomNavigationBar: Container(
+            color: AppTheme.background,
             padding: const EdgeInsets.all(16.0),
-            child: _isSubmitting
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton.icon(
-                    icon: const Icon(Icons.save_alt_outlined),
-                    label: const Text("Konfirmasi & Simpan"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onPressed: _submitWashingLog,
-                  ),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.save_alt_outlined),
+              label: const Text("Konfirmasi & Simpan"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: _isSubmitting ? null : _submitWashingLog,
+            ),
           ),
         ));
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(title,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16));
   }
 }

@@ -43,6 +43,19 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  Color _getColorForUnitType(String type) {
+    switch (type) {
+      case 'Head':
+        return AppTheme.logoRed;
+      case 'Chassis':
+        return AppTheme.logoAbu;
+      case 'Storage':
+        return AppTheme.logoBiru;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildChip(String label, int count, bool isSelected) {
     return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -204,30 +217,19 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
                               icon = Icons.miscellaneous_services_outlined;
                             else if (unitType == 'Storage')
                               icon = Icons.inventory_2_outlined;
+                            final unitColor =
+                                _getColorForUnitType(unit['type']);
 
                             return Card(
                               elevation: 2,
                               shadowColor: Colors.black.withOpacity(0.1),
                               margin: const EdgeInsets.only(bottom: 12),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16)),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                                leading: CircleAvatar(
-                                    backgroundColor:
-                                        Colors.red.withOpacity(0.1),
-                                    child: Icon(icon, color: Colors.red[700])),
-                                // [FIX] Tampilkan juga tipe unit agar jelas
-                                title: Text("$title ($unitType)",
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17)),
-                                subtitle: Text(
-                                    "$formattedDate\n($itemCount item perlu perbaikan)",
-                                    style: TextStyle(color: Colors.red[900])),
-                                trailing: const Icon(Icons.arrow_forward_ios,
-                                    size: 16),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              clipBehavior: Clip
+                                  .antiAlias, // Penting agar baris warna tidak keluar
+                              child: InkWell(
                                 onTap: () {
                                   Navigator.push(
                                           context,
@@ -241,6 +243,47 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
                                                 _fetchMaintenanceList();
                                           }));
                                 },
+                                child: Row(
+                                  children: [
+                                    // Baris highlight warna
+                                    Container(width: 8, color: unitColor),
+                                    Expanded(
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 10),
+                                        leading: CircleAvatar(
+                                            backgroundColor:
+                                                unitColor.withOpacity(0.1),
+                                            child:
+                                                Icon(icon, color: unitColor)),
+                                        title: Text(title,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 17)),
+                                        subtitle: Text(
+                                            "$formattedDate\n($itemCount item perlu perbaikan)"),
+                                        trailing: const Icon(
+                                            Icons.arrow_forward_ios,
+                                            size: 16),
+                                        onTap: () {
+                                          Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          MaintenanceDetailPage(
+                                                              unitCode: title,
+                                                              items: unit[
+                                                                  'items'])))
+                                              .then((value) => setState(() {
+                                                    _maintenanceFuture =
+                                                        _fetchMaintenanceList();
+                                                  }));
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           },

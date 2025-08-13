@@ -184,7 +184,6 @@ class _RepairPageState extends State<RepairPage> {
 
   @override
   Widget build(BuildContext context) {
-    // [DIUBAH] Mengambil data dari 'item' yang dikirim
     final itemName = widget.item['custom_title'] ??
         widget.item['item_name'] ??
         'Item tidak diketahui';
@@ -199,27 +198,28 @@ class _RepairPageState extends State<RepairPage> {
           showExitConfirmationDialog(context);
         },
         child: Scaffold(
+          backgroundColor: AppTheme.background,
           appBar: AppBar(
-            title: Text(itemName),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            title: Text(itemName,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: AppTheme.background,
+            foregroundColor: AppTheme.textPrimary,
+            elevation: 0,
           ),
           body: Form(
             key: _formKey,
             child: ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
-                const Text("Detail Masalah", style: AppTextStyles.subtitle),
-                const Divider(),
-                const SizedBox(height: 8),
+                _buildSectionTitle("Detail Masalah"),
                 if (problemPhotoUrl != null && problemPhotoUrl.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
+                    padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
                     child: InkWell(
                       onTap: () =>
                           _showPhotoViewer(context, imageUrl: problemPhotoUrl),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                         child: Image.network(problemPhotoUrl,
                             height: 200,
                             width: double.infinity,
@@ -229,9 +229,7 @@ class _RepairPageState extends State<RepairPage> {
                   ),
                 Text(problemNotes, style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 24),
-                const Text("Form Perbaikan", style: AppTextStyles.subtitle),
-                const Divider(),
-                const SizedBox(height: 8),
+                _buildSectionTitle("Form Perbaikan"),
                 TextFormField(
                   controller: _notesController,
                   decoration: const InputDecoration(
@@ -288,20 +286,26 @@ class _RepairPageState extends State<RepairPage> {
               ],
             ),
           ),
-          bottomNavigationBar: Padding(
+          bottomNavigationBar: Container(
+            color: AppTheme.background,
             padding: const EdgeInsets.all(16.0),
-            child: _isSubmitting
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton.icon(
-                    icon: const Icon(Icons.save),
-                    label: const Text("Simpan Catatan Perbaikan"),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange[700],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12)),
-                    onPressed: _submitRepair,
-                  ),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.save),
+              label: const Text("Simpan Catatan Perbaikan"),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12)),
+              onPressed: _isSubmitting ? null : _submitRepair,
+            ),
           ),
         ));
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(title, style: AppTextStyles.subtitle),
+    );
   }
 }

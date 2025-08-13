@@ -258,10 +258,13 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text("Lapor Masalah: ${widget.unitCode}"),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        title: Text("Lapor Masalah: ${widget.unitCode}",
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _inspectionItemsFuture,
@@ -300,7 +303,8 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
           );
         },
       ),
-      bottomNavigationBar: Padding(
+      bottomNavigationBar: Container(
+        color: AppTheme.background,
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton.icon(
           icon: const Icon(Icons.send),
