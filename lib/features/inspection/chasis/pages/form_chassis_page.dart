@@ -92,7 +92,6 @@ class _FormChassisPageState extends State<FormChassisPage> {
 
   @override
   Widget build(BuildContext context) {
-    // [FIX] Gunakan Consumer dari provider base
     return PopScope(
         canPop: false,
         onPopInvoked: (didPop) {
@@ -164,33 +163,45 @@ class _FormChassisPageState extends State<FormChassisPage> {
 
             return Scaffold(
               appBar: AppBar(
-                title: Text('Inspeksi: ${widget.chassisCode}'),
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
+                title: Text('Inspeksi: ${widget.chassisCode}',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: AppTheme.background,
+                foregroundColor: AppTheme.textPrimary,
+                elevation: 0,
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(25.0),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      pages.length <= 1
-                          ? "Ringkasan & Kirim"
-                          : (isLastPage
-                              ? "Ringkasan & Kirim"
-                              : "Langkah ${_currentPage + 1} dari ${pages.length}"),
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
+                  child: Column(
+                    children: [
+                      Text(
+                        pages.length <= 1
+                            ? "Ringkasan & Kirim"
+                            : (isLastPage
+                                ? "Ringkasan & Kirim"
+                                : "Langkah ${_currentPage + 1} dari ${pages.length}"),
+                        style: const TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 16),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: LinearProgressIndicator(
+                          value: (pages.isEmpty)
+                              ? 0
+                              : (_currentPage + 1) / pages.length,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppTheme.primary),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ),
-              body: pages.length <= 1
-                  ? const StepReviewPage()
-                  : PageView(
-                      controller: _pageController,
-                      onPageChanged: _onPageChanged,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: pages,
-                    ),
+              body: PageView(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                physics: const NeverScrollableScrollPhysics(),
+                children: pages,
+              ),
               bottomNavigationBar: BottomAppBar(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

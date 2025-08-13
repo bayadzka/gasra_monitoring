@@ -440,9 +440,9 @@ class _HomePageState extends State<HomePage> {
     if (data == null || data.isEmpty)
       return const Center(child: Text("Tidak ada aset bermasalah."));
     final colors = [
-      AppTheme.primary,
-      AppTheme.secondary,
-      Colors.orange,
+      AppTheme.logoRed,
+      AppTheme.logoAbu,
+      AppTheme.logoBiru,
       Colors.red
     ];
     return Row(

@@ -34,37 +34,35 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
     super.dispose();
   }
 
-  // Fungsi Fetch tidak berubah, karena kita hanya mengubah View di backend
   Future<List<Map<String, dynamic>>> _fetchMaintenanceList() async {
+    // [FIX] Select kolom baru 'unit_type' dan 'unique_unit_id'
     final response = await SupabaseManager.client
         .from('pending_repairs_view')
-        .select('*')
+        .select('*, unit_type, unique_unit_id')
         .order('reported_at', ascending: false);
     return List<Map<String, dynamic>>.from(response);
   }
 
-  // BuildChip tidak berubah
   Widget _buildChip(String label, int count, bool isSelected) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: ChoiceChip(
-        label: Text('$label ($count)'),
-        selected: isSelected,
-        onSelected: (selected) {
-          if (selected) setState(() => _selectedFilter = label);
-        },
-        selectedColor: AppTheme.primary,
-        labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold),
-        backgroundColor: Colors.grey[200],
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-                color: isSelected ? AppTheme.primary : Colors.grey.shade300)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-    );
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: ChoiceChip(
+            label: Text('$label ($count)'),
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) setState(() => _selectedFilter = label);
+            },
+            selectedColor: AppTheme.primary,
+            labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.bold),
+            backgroundColor: Colors.grey[200],
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                    color:
+                        isSelected ? AppTheme.primary : Colors.grey.shade300)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)));
   }
 
   @override
@@ -72,8 +70,9 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Daftar Perlu Perbaikan"),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _maintenanceFuture,
@@ -86,47 +85,38 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                   Icon(Icons.check_circle_outline,
                       size: 80, color: Colors.green),
                   SizedBox(height: 16),
                   Text("Semua unit dalam kondisi baik!",
-                      style: TextStyle(fontSize: 18, color: Colors.grey)),
-                ],
-              ),
-            );
+                      style: TextStyle(fontSize: 18, color: Colors.grey))
+                ]));
           }
 
           final allItems = snapshot.data!;
 
-          // [DIUBAH TOTAL] Logika pengelompokan dan filtering disederhanakan
+          // [FIX] Mengelompokkan berdasarkan ID unik, bukan lagi kode unit
           final Map<String, List<Map<String, dynamic>>> groupedByUnit = {};
           for (var item in allItems) {
-            final unitCode = item['head_code'] ??
-                item['chassis_code'] ??
-                item['storage_code'] ??
-                'Unknown';
-            (groupedByUnit[unitCode] ??= []).add(item);
+            final uniqueId = item['unique_unit_id'];
+            if (uniqueId != null) {
+              (groupedByUnit[uniqueId] ??= []).add(item);
+            }
           }
 
           final List<Map<String, dynamic>> unitList =
               groupedByUnit.entries.map((entry) {
             final firstItem = entry.value.first;
-            String unitType = '';
-            if (firstItem['head_code'] != null)
-              unitType = 'Head';
-            else if (firstItem['chassis_code'] != null)
-              unitType = 'Chassis';
-            else if (firstItem['storage_code'] != null) unitType = 'Storage';
-
             return {
-              'unit_code': entry.key,
+              'unit_code': firstItem['unit_code'] ?? 'N/A',
               'items': entry.value,
               'item_count': entry.value.length,
               'latest_report': firstItem['reported_at'],
-              'type': unitType
+              'type': firstItem['unit_type'] ??
+                  'Lainnya' // Menggunakan unit_type dari View
             };
           }).toList();
 
@@ -148,19 +138,18 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Cari berdasarkan kode unit...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                        borderRadius: BorderRadius.circular(50),
+                        borderSide: BorderSide.none),
                     filled: true,
                     fillColor: Colors.grey[200],
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
               ),
@@ -194,41 +183,43 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
                   child: filteredList.isEmpty
                       ? const Center(child: Text("Tidak ada hasil yang cocok."))
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                          padding: const EdgeInsets.all(16),
                           itemCount: filteredList.length,
                           itemBuilder: (context, index) {
                             final unit = filteredList[index];
                             final title = unit['unit_code'];
                             final itemCount = unit['item_count'];
+                            final unitType = unit['type']; // Ambil tipe unit
                             final utcDate =
                                 DateTime.parse(unit['latest_report']);
-                            final localDate =
-                                utcDate.toLocal(); // <-- Tambahkan baris ini
+                            final localDate = utcDate.toLocal();
                             final formattedDate =
                                 DateFormat('d MMMM yyyy, HH:mm')
-                                    .format(localDate); // Gunakan localDate
+                                    .format(localDate);
 
                             IconData icon = Icons.article;
-                            if (unit['type'] == 'Head')
+                            if (unitType == 'Head')
                               icon = Icons.fire_truck_outlined;
-                            else if (unit['type'] == 'Chassis')
+                            else if (unitType == 'Chassis')
                               icon = Icons.miscellaneous_services_outlined;
-                            else if (unit['type'] == 'Storage')
+                            else if (unitType == 'Storage')
                               icon = Icons.inventory_2_outlined;
 
                             return Card(
                               elevation: 2,
-                              color: Colors.red[50],
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
+                              shadowColor: Colors.black.withOpacity(0.1),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 10),
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.red.withOpacity(0.1),
-                                  child: Icon(icon, color: Colors.red[700]),
-                                ),
-                                title: Text(title,
+                                    backgroundColor:
+                                        Colors.red.withOpacity(0.1),
+                                    child: Icon(icon, color: Colors.red[700])),
+                                // [FIX] Tampilkan juga tipe unit agar jelas
+                                title: Text("$title ($unitType)",
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 17)),
@@ -238,20 +229,17 @@ class _MaintenanceListPageState extends State<MaintenanceListPage> {
                                 trailing: const Icon(Icons.arrow_forward_ios,
                                     size: 16),
                                 onTap: () {
-                                  // [DIUBAH] Navigasi ke halaman detail yang sesuai
                                   Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MaintenanceDetailPage(
-                                        unitCode: title,
-                                        items: unit['items'],
-                                      ),
-                                    ),
-                                  ).then((value) => setState(() {
-                                        // Refresh list setelah kembali dari detail
-                                        _maintenanceFuture =
-                                            _fetchMaintenanceList();
-                                      }));
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  MaintenanceDetailPage(
+                                                      unitCode: title,
+                                                      items: unit['items'])))
+                                      .then((value) => setState(() {
+                                            _maintenanceFuture =
+                                                _fetchMaintenanceList();
+                                          }));
                                 },
                               ),
                             );

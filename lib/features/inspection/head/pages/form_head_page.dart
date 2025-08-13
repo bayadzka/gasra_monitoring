@@ -90,7 +90,6 @@ class _FormHeadPageState extends State<FormHeadPage> {
 
   @override
   Widget build(BuildContext context) {
-    // [DIUBAH] Seluruh Scaffold dibungkus dengan PopScope
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -174,22 +173,39 @@ class _FormHeadPageState extends State<FormHeadPage> {
           }
 
           return Scaffold(
+            // [FIX] AppBar diubah agar sesuai tema baru
             appBar: AppBar(
-              title: Text('Inspeksi: ${widget.headCode}'),
-              backgroundColor: AppTheme.primary,
-              foregroundColor: Colors.white,
+              title: Text('Inspeksi: ${widget.headCode}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              backgroundColor: AppTheme.background,
+              foregroundColor: AppTheme.textPrimary,
+              elevation: 0,
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(25.0),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Text(
-                    pages.length <= 1
-                        ? "Ringkasan & Kirim"
-                        : (isLastPage
-                            ? "Ringkasan & Kirim"
-                            : "Langkah ${_currentPage + 1} dari ${pages.length}"),
-                    style: const TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      pages.length <= 1
+                          ? "Ringkasan & Kirim"
+                          : (isLastPage
+                              ? "Ringkasan & Kirim"
+                              : "Langkah ${_currentPage + 1} dari ${pages.length}"),
+                      style: const TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 16),
+                    ),
+                    // Progress bar
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: LinearProgressIndicator(
+                        value: (pages.isEmpty)
+                            ? 0
+                            : (_currentPage + 1) / pages.length,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.primary),
+                      ),
+                    )
+                  ],
                 ),
               ),
             ),

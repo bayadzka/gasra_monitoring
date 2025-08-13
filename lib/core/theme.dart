@@ -10,6 +10,9 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF555555); // Abu Sedang
   static const Color success = Color(0xFF25D366); // Hijau WA
   static const Color error = Colors.red;
+  static const Color logoRed = Color(0xFFE53935);
+  static const Color logoAbu = Color(0xFF616161);
+  static const Color logoBiru = Color(0xFF29B6F6);
 }
 
 class AppTextStyles {

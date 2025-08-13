@@ -9,6 +9,7 @@ import 'package:gasra_monitoring/features/inspection/providers/chassis_inspectio
 import 'package:gasra_monitoring/features/report/pages/report_problem_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class ChassisListPage extends StatefulWidget {
   final String chassisSubtype;
@@ -28,7 +29,7 @@ class _ChassisListPageState extends State<ChassisListPage> {
   @override
   void initState() {
     super.initState();
-    _chassisFuture = _fetchChassisWithStatus(); // DIUBAH
+    _chassisFuture = _fetchChassisWithStatus();
     _searchController.addListener(() {
       if (mounted) {
         setState(() {
@@ -44,9 +45,7 @@ class _ChassisListPageState extends State<ChassisListPage> {
     super.dispose();
   }
 
-  // DIUBAH TOTAL
   Future<List<Map<String, dynamic>>> _fetchChassisWithStatus() async {
-    // 1. Ambil data seperti biasa (tidak ada yang diubah di sini)
     final response =
         await SupabaseManager.client.rpc('get_chassis_with_status');
     final allChassis = List<Map<String, dynamic>>.from(response);
@@ -59,18 +58,15 @@ class _ChassisListPageState extends State<ChassisListPage> {
       return feet == feetValue;
     }).toList();
 
-    // 2. [FIX] Tambahkan logika pengurutan di sini
     filteredChassis.sort((a, b) {
-      // Coba ubah kode menjadi angka, jika gagal, anggap sebagai nilai besar
       final int numA = int.tryParse(a['chassis_code'] ?? '99999') ?? 99999;
       final int numB = int.tryParse(b['chassis_code'] ?? '99999') ?? 99999;
-      return numA.compareTo(numB); // Urutkan sebagai angka
+      return numA.compareTo(numB);
     });
 
     return filteredChassis;
   }
 
-  // BARU
   void _handleChassisSelection(Map<String, dynamic> chassis) async {
     final lastInspectionDateString = chassis['last_inspection_date'];
     bool proceed = true;
@@ -109,7 +105,6 @@ class _ChassisListPageState extends State<ChassisListPage> {
     }
   }
 
-  // BARU
   void _navigateToNextPage(Map<String, dynamic> chassis) {
     final chassisCode = chassis['chassis_code'] as String;
     final chassisId = chassis['id'].toString();
@@ -145,119 +140,118 @@ class _ChassisListPageState extends State<ChassisListPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Pilih Chassis (${widget.chassisSubtype})'),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _chassisFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Terjadi error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-                child: Text('Tidak ada data Chassis untuk tipe ini.'));
-          }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari kode chassis...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey[200],
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _chassisFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text('Terjadi error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                      child: Text("Tidak ada data unit untuk tipe ini."));
+                }
 
-          final allChassis = snapshot.data!;
-          final filteredChassis = allChassis.where((chassis) {
-            final chassisCode = chassis['chassis_code'] as String;
-            return chassisCode
-                .toLowerCase()
-                .contains(_searchQuery.toLowerCase());
-          }).toList();
+                final allChassis = snapshot.data!;
+                final filteredChassis = allChassis.where((chassis) {
+                  final chassisCode = chassis['chassis_code'] as String;
+                  return chassisCode
+                      .toLowerCase()
+                      .contains(_searchQuery.toLowerCase());
+                }).toList();
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Cari kode chassis...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                if (filteredChassis.isEmpty) {
+                  return const Center(
+                      child: Text("Tidak ada hasil yang cocok."));
+                }
+
+                return AnimationLimiter(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredChassis.length,
+                    itemBuilder: (context, index) {
+                      return AnimationConfiguration.staggeredList(
+                        position: index,
+                        duration: const Duration(milliseconds: 375),
+                        child: SlideAnimation(
+                          verticalOffset: 50.0,
+                          child: FadeInAnimation(
+                            child: _buildUnitCard(filteredChassis[index]),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ),
-              Expanded(
-                child: filteredChassis.isEmpty
-                    ? const Center(child: Text("Tidak ada hasil yang cocok."))
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                        itemCount: filteredChassis.length,
-                        itemBuilder: (context, index) {
-                          final chassis = filteredChassis[index];
-                          final chassisCode = chassis['chassis_code'] as String;
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                          // BARU: Logika status
-                          final lastInspectionDate =
-                              chassis['last_inspection_date'];
-                          Widget? statusWidget; // Jadikan nullable
+  Widget _buildUnitCard(Map<String, dynamic> chassis) {
+    final chassisCode = chassis['chassis_code'] as String;
+    final lastInspectionDate = chassis['last_inspection_date'];
 
-// HANYA TAMPILKAN STATUS JIKA BUKAN UNTUK REPORT
-                          if (!widget.isForReport) {
-                            if (lastInspectionDate == null) {
-                              statusWidget = const Text(
-                                'Belum pernah diinspeksi',
-                                style:
-                                    TextStyle(fontSize: 13, color: Colors.red),
-                              );
-                            } else {
-                              final date = DateTime.parse(lastInspectionDate);
-                              final formattedDate =
-                                  DateFormat('d MMM yyyy').format(date);
-                              final inspectorName =
-                                  chassis['inspector_name'] ?? 'N/A';
-                              statusWidget = Text(
-                                'Terakhir inspeksi: $formattedDate oleh $inspectorName',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Colors.green),
-                              );
-                            }
-                          }
+    bool hasBeenInspected = lastInspectionDate != null;
+    Color statusColor = hasBeenInspected ? Colors.green : Colors.red;
+    String statusText = 'Belum Diperiksa';
+    if (hasBeenInspected) {
+      statusText =
+          'Terakhir diperiksa: ${DateFormat('d MMM yyyy').format(DateTime.parse(lastInspectionDate).toLocal())}';
+    }
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 6),
-                            child: ListTile(
-                              title: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    chassisCode,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  // [DIUBAH] Tambahkan pengecekan null
-                                  if (statusWidget != null) ...[
-                                    const SizedBox(height: 4),
-                                    statusWidget, // Tampilkan status di sini
-                                  ],
-                                ],
-                              ),
-                              trailing: const Icon(Icons.arrow_forward_ios,
-                                  size: 16, color: Colors.grey),
-                              onTap: () => _handleChassisSelection(chassis),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        onTap: () => _handleChassisSelection(chassis),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        title: Text(chassisCode,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        subtitle: widget.isForReport
+            ? null
+            : Text(statusText,
+                style: TextStyle(color: statusColor, fontSize: 12)),
+        trailing: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.circle, color: statusColor, size: 12),
+        ),
       ),
     );
   }

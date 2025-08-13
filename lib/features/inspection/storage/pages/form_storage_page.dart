@@ -127,18 +127,34 @@ class _FormStoragePageState extends State<FormStoragePage> {
 
             return Scaffold(
               appBar: AppBar(
-                title: Text('Inspeksi: ${widget.storageCode}'),
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
+                title: Text('Inspeksi: ${widget.storageCode}',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: AppTheme.background,
+                foregroundColor: AppTheme.textPrimary,
+                elevation: 0,
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(25.0),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      isLastPage ? "Ringkasan & Kirim" : "Langkah 1 dari 2",
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
+                  child: Column(
+                    children: [
+                      Text(
+                        isLastPage
+                            ? "Ringkasan & Kirim"
+                            : "Langkah 1 dari 2", // Disederhanakan
+                        style: const TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 16),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: LinearProgressIndicator(
+                          value: (pages.isEmpty)
+                              ? 0
+                              : (_currentPage + 1) / pages.length,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppTheme.primary),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ),

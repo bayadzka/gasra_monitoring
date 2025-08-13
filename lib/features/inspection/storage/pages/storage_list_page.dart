@@ -9,6 +9,7 @@ import 'package:gasra_monitoring/features/inspection/storage/pages/form_storage_
 import 'package:gasra_monitoring/features/report/pages/report_problem_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class StorageListPage extends StatefulWidget {
   final String storageType;
@@ -32,7 +33,7 @@ class _StorageListPageState extends State<StorageListPage> {
   @override
   void initState() {
     super.initState();
-    _storageFuture = _fetchStoragesWithStatus(); // DIUBAH
+    _storageFuture = _fetchStoragesWithStatus();
     _searchController.addListener(() {
       if (mounted) {
         setState(() {
@@ -48,7 +49,6 @@ class _StorageListPageState extends State<StorageListPage> {
     super.dispose();
   }
 
-  // DIUBAH TOTAL
   Future<List<Map<String, dynamic>>> _fetchStoragesWithStatus() async {
     final response =
         await SupabaseManager.client.rpc('get_storages_with_status');
@@ -62,7 +62,6 @@ class _StorageListPageState extends State<StorageListPage> {
       return feet == feetValue;
     }).toList();
 
-    // [FIX] Logika pengurutan numerik ditambahkan di sini
     filteredStorages.sort((a, b) {
       final int numA = int.tryParse(a['storage_code'] ?? '99999') ?? 99999;
       final int numB = int.tryParse(b['storage_code'] ?? '99999') ?? 99999;
@@ -72,7 +71,6 @@ class _StorageListPageState extends State<StorageListPage> {
     return filteredStorages;
   }
 
-  // BARU
   void _handleStorageSelection(Map<String, dynamic> storage) async {
     final lastInspectionDateString = storage['last_inspection_date'];
     bool proceed = true;
@@ -111,7 +109,6 @@ class _StorageListPageState extends State<StorageListPage> {
     }
   }
 
-  // BARU
   void _navigateToNextPage(Map<String, dynamic> storage) {
     final storageCode = storage['storage_code'] as String;
     final storageId = storage['id'].toString();
@@ -146,119 +143,118 @@ class _StorageListPageState extends State<StorageListPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Pilih Storage (${widget.storageType})'),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _storageFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Terjadi error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-                child: Text('Tidak ada data Storage untuk tipe ini.'));
-          }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari kode storage...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey[200],
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _storageFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text('Terjadi error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                      child: Text('Tidak ada data Storage untuk tipe ini.'));
+                }
 
-          final allStorages = snapshot.data!;
-          final filteredStorages = allStorages.where((storage) {
-            final storageCode = storage['storage_code'] as String;
-            return storageCode
-                .toLowerCase()
-                .contains(_searchQuery.toLowerCase());
-          }).toList();
+                final allStorages = snapshot.data!;
+                final filteredStorages = allStorages.where((storage) {
+                  final storageCode = storage['storage_code'] as String;
+                  return storageCode
+                      .toLowerCase()
+                      .contains(_searchQuery.toLowerCase());
+                }).toList();
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Cari kode storage...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                if (filteredStorages.isEmpty) {
+                  return const Center(
+                      child: Text("Tidak ada hasil yang cocok."));
+                }
+
+                return AnimationLimiter(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredStorages.length,
+                    itemBuilder: (context, index) {
+                      return AnimationConfiguration.staggeredList(
+                        position: index,
+                        duration: const Duration(milliseconds: 375),
+                        child: SlideAnimation(
+                          verticalOffset: 50.0,
+                          child: FadeInAnimation(
+                            child: _buildUnitCard(filteredStorages[index]),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ),
-              Expanded(
-                child: filteredStorages.isEmpty
-                    ? const Center(child: Text("Tidak ada hasil yang cocok."))
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                        itemCount: filteredStorages.length,
-                        itemBuilder: (context, index) {
-                          final storage = filteredStorages[index];
-                          final storageCode = storage['storage_code'] as String;
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                          // BARU: Logika status
-                          final lastInspectionDate =
-                              storage['last_inspection_date'];
-                          Widget? statusWidget; // Jadikan nullable
+  Widget _buildUnitCard(Map<String, dynamic> storage) {
+    final storageCode = storage['storage_code'] as String;
+    final lastInspectionDate = storage['last_inspection_date'];
 
-// HANYA TAMPILKAN STATUS JIKA BUKAN UNTUK REPORT
-                          if (!widget.isForReport) {
-                            if (lastInspectionDate == null) {
-                              statusWidget = const Text(
-                                'Belum pernah diinspeksi',
-                                style:
-                                    TextStyle(fontSize: 13, color: Colors.red),
-                              );
-                            } else {
-                              final date = DateTime.parse(lastInspectionDate);
-                              final formattedDate =
-                                  DateFormat('d MMM yyyy').format(date);
-                              final inspectorName =
-                                  storage['inspector_name'] ?? 'N/A';
-                              statusWidget = Text(
-                                'Terakhir inspeksi: $formattedDate oleh $inspectorName',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Colors.green),
-                              );
-                            }
-                          }
+    bool hasBeenInspected = lastInspectionDate != null;
+    Color statusColor = hasBeenInspected ? Colors.green : Colors.red;
+    String statusText = 'Belum Diperiksa';
+    if (hasBeenInspected) {
+      statusText =
+          'Terakhir diperiksa: ${DateFormat('d MMM yyyy').format(DateTime.parse(lastInspectionDate).toLocal())}';
+    }
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 6),
-                            child: ListTile(
-                              title: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    storageCode,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  // [DIUBAH] Tambahkan pengecekan null
-                                  if (statusWidget != null) ...[
-                                    const SizedBox(height: 4),
-                                    statusWidget, // Tampilkan status di sini
-                                  ],
-                                ],
-                              ),
-                              trailing: const Icon(Icons.arrow_forward_ios,
-                                  size: 16, color: Colors.grey),
-                              onTap: () => _handleStorageSelection(storage),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        onTap: () => _handleStorageSelection(storage),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        title: Text(storageCode,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        subtitle: widget.isForReport
+            ? null
+            : Text(statusText,
+                style: TextStyle(color: statusColor, fontSize: 12)),
+        trailing: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.circle, color: statusColor, size: 12),
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:gasra_monitoring/features/inspection/chasis/pages/chassis_list_page.dart';
 import 'package:gasra_monitoring/core/theme.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class ChassisTypeSelectionPage extends StatelessWidget {
   final bool isForReport;
@@ -13,72 +14,67 @@ class ChassisTypeSelectionPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Tipe Chassis'),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: AnimationLimiter(
         child: ListView(
-          children: [
-            buildTypeCard(
-              context,
-              icon: Icons.fire_truck_outlined,
-              title: '20 Feet',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      // [FIX] Pastikan nama parameter di sini adalah 'chassisSubtype'
-                      builder: (context) => ChassisListPage(
-                          chassisSubtype: '20 Feet', isForReport: isForReport)),
-                );
-              },
+          padding: const EdgeInsets.all(16.0),
+          children: AnimationConfiguration.toStaggeredList(
+            duration: const Duration(milliseconds: 375),
+            childAnimationBuilder: (widget) => SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(child: widget),
             ),
-            const SizedBox(height: 16),
-            buildTypeCard(
-              context,
-              title: '40 Feet',
-              icon: Icons.fire_truck_rounded,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      // [FIX] Pastikan nama parameter di sini adalah 'chassisSubtype'
-                      builder: (context) => ChassisListPage(
-                          chassisSubtype: '40 Feet', isForReport: isForReport)),
-                );
-              },
-            ),
-          ],
+            children: [
+              _buildTypeCard(
+                context,
+                icon: Icons.fire_truck_outlined, // Sesuaikan ikon jika perlu
+                title: '20 Feet',
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ChassisListPage(
+                            chassisSubtype: '20 Feet',
+                            isForReport: isForReport))),
+              ),
+              _buildTypeCard(
+                context,
+                title: '40 Feet',
+                icon: Icons.fire_truck_rounded, // Sesuaikan ikon jika perlu
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ChassisListPage(
+                            chassisSubtype: '40 Feet',
+                            isForReport: isForReport))),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget buildTypeCard(BuildContext context,
+  Widget _buildTypeCard(BuildContext context,
       {required IconData icon,
       required String title,
       required VoidCallback onTap}) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
+      elevation: 3,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Row(
-            children: [
-              Icon(icon, size: 32, color: AppTheme.primary),
-              const SizedBox(width: 20),
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600)),
-              const Spacer(),
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
-            ],
-          ),
-        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        leading: Icon(icon, size: 32, color: AppTheme.primary),
+        title: Text(title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        trailing:
+            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
       ),
     );
   }

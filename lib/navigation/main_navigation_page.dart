@@ -1,6 +1,7 @@
 // lib/navigation/main_navigation_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:gasra_monitoring/core/theme.dart';
 
 // Halaman-halaman utama kita
@@ -22,41 +23,119 @@ class InspectionHubPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Inspeksi")),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildMenuButton(
-            context,
-            icon: Icons.fire_truck_outlined,
-            label: "Form Head",
-            onTap: () => Navigator.push(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text("Mulai Inspeksi"),
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
+      ),
+      body: AnimationLimiter(
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: AnimationConfiguration.toStaggeredList(
+            duration: const Duration(milliseconds: 375),
+            childAnimationBuilder: (widget) => SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(child: widget),
+            ),
+            children: [
+              _buildInspectionTypeCard(
                 context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const HeadTypeSelectionPage(isForReport: false))),
-          ),
-          _buildMenuButton(
-            context,
-            icon: Icons.miscellaneous_services_outlined,
-            label: "Form Chasis",
-            onTap: () => Navigator.push(
+                title: "Inspeksi Head",
+                subtitle: "Pemeriksaan unit truk dan head",
+                icon: Icons.fire_truck_rounded,
+                color: AppTheme.logoRed,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            const HeadTypeSelectionPage(isForReport: false))),
+              ),
+              _buildInspectionTypeCard(
                 context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const ChassisTypeSelectionPage(isForReport: false))),
-          ),
-          _buildMenuButton(
-            context,
-            icon: Icons.inventory_2_outlined,
-            label: "Form Storage",
-            onTap: () => Navigator.push(
+                title: "Inspeksi Chassis",
+                subtitle: "Pemeriksaan rangka dan roda",
+                icon: Icons.miscellaneous_services_rounded,
+                color: AppTheme.logoAbu,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ChassisTypeSelectionPage(
+                            isForReport: false))),
+              ),
+              _buildInspectionTypeCard(
                 context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const StorageTypeSelectionPage(isForReport: false))),
+                title: "Inspeksi Storage",
+                subtitle: "Pemeriksaan tabung dan katup",
+                icon: Icons.inventory_2_rounded,
+                color: AppTheme.logoBiru,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const StorageTypeSelectionPage(
+                            isForReport: false))),
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  // Helper widget baru untuk kartu tipe inspeksi
+  Widget _buildInspectionTypeCard(BuildContext context,
+      {required String title,
+      required String subtitle,
+      required IconData icon,
+      required Color color,
+      required VoidCallback onTap}) {
+    return Card(
+      elevation: 5,
+      shadowColor: color.withOpacity(0.3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+            colors: [color.withOpacity(0.8), color],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.white.withOpacity(0.9),
+                child: Icon(icon, color: color, size: 32),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                    const SizedBox(height: 4),
+                    Text(subtitle,
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9))),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios,
+                  color: Colors.white, size: 18),
+            ],
+          ),
+        ),
       ),
     );
   }
