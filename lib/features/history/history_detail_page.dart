@@ -7,13 +7,13 @@ import 'package:gasra_monitoring/core/theme.dart';
 class HistoryDetailPage extends StatefulWidget {
   final String inspectionId;
   final String inspectionCode;
-  final String inspectorName; // [BARU] Tambahkan variabel untuk nama
+  final String inspectorName;
 
   const HistoryDetailPage({
     super.key,
     required this.inspectionId,
     required this.inspectionCode,
-    required this.inspectorName, // [BARU] Jadikan required di constructor
+    required this.inspectorName,
   });
 
   @override
@@ -29,12 +29,12 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
     _detailsFuture = _fetchAndGroupInspectionDetails();
   }
 
-  // Fungsi _fetchAndGroupInspectionDetails tidak ada perubahan
   Future<Map<String, List<Map<String, dynamic>>>>
       _fetchAndGroupInspectionDetails() async {
     final response = await SupabaseManager.client
         .from('inspection_results')
-        .select('kondisi, keterangan, inspection_items(name, category)')
+        .select(
+            'kondisi, keterangan, problem_photo_url, inspection_items(name, category)')
         .eq('inspection_id', widget.inspectionId);
 
     final List<Map<String, dynamic>> results =
@@ -51,10 +51,12 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text("Detail Inspeksi ${widget.inspectionCode}"),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        title: const Text("Detail Inspeksi"),
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
       body: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
         future: _detailsFuture,
@@ -78,7 +80,7 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
             'Wiper',
             'Sistem Pengereman',
             'Per Head',
-            'U Bolt-Tusukan Per',
+            'U Bolt+Tusukan Per',
             'Hubbolt Roda',
             'Engine',
             'Surat Kendaraan',
@@ -102,12 +104,12 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Ringkasan Inspeksi", style: AppTextStyles.title),
+                Text("Ringkasan Inspeksi",
+                    style: AppTextStyles.title.copyWith(fontSize: 24)),
                 const SizedBox(height: 8),
                 Text("No. Unit: ${widget.inspectionCode}",
-                    style: AppTextStyles.subtitle),
+                    style: AppTextStyles.subtitle.copyWith(fontSize: 18)),
                 const SizedBox(height: 4),
-                // [BARU] Tampilkan nama penginspeksi
                 Text(
                   "Diinspeksi oleh: ${widget.inspectorName}",
                   style: TextStyle(
@@ -115,7 +117,7 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
                       color: Colors.grey[700],
                       fontSize: 15),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 ...sortedKeys.map((category) {
                   final items = groupedData[category]!;
                   return _buildSection(context, category, items);
@@ -128,68 +130,46 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
     );
   }
 
-  // Widget _buildSection tidak ada perubahan
   Widget _buildSection(
       BuildContext context, String title, List<Map<String, dynamic>> items) {
     return Card(
-        margin: const EdgeInsets.only(bottom: 16),
         elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.05),
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title, style: AppTextStyles.subtitle.copyWith(fontSize: 18)),
               const Divider(),
-              Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(4),
-                    1: FlexColumnWidth(1),
-                    2: FlexColumnWidth(4),
-                  },
-                  border:
-                      TableBorder.all(color: Colors.grey.shade300, width: 1),
-                  children: [
-                    const TableRow(
-                        decoration: BoxDecoration(color: Colors.black12),
-                        children: [
-                          Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text('Item',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold))),
-                          Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text('Kondisi',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold))),
-                          Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text('Keterangan',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold))),
-                        ]),
-                    ...items.map((itemData) {
-                      final itemName = itemData['inspection_items']['name'];
-                      final kondisi = itemData['kondisi'];
-                      final keterangan = itemData['keterangan'] ?? '';
-                      return TableRow(children: [
-                        Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(itemName)),
-                        Center(
-                            child: kondisi == null
-                                ? Container()
-                                : (kondisi == 'baik')
-                                    ? const Icon(Icons.check_circle,
-                                        color: Colors.green)
-                                    : const Icon(Icons.cancel,
-                                        color: Colors.red)),
-                        Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(keterangan)),
-                      ]);
-                    })
-                  ])
+              ...items.map((itemData) {
+                final itemName = itemData['inspection_items']['name'];
+                final kondisi = itemData['kondisi'];
+                final keterangan = itemData['keterangan'] ?? '';
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    children: [
+                      kondisi == 'baik'
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : const Icon(Icons.cancel, color: Colors.red),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: Text(itemName,
+                              style: const TextStyle(fontSize: 15))),
+                      if (keterangan.isNotEmpty)
+                        Expanded(
+                            child: Text(keterangan,
+                                textAlign: TextAlign.end,
+                                style: const TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey))),
+                    ],
+                  ),
+                );
+              }),
             ])));
   }
 }

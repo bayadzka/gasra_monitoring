@@ -16,6 +16,60 @@ import 'package:gasra_monitoring/features/washing/pages/washing_log_page.dart';
 import 'package:gasra_monitoring/features/history/history_page.dart';
 import 'package:gasra_monitoring/features/washing/pages/washing_history_page.dart';
 
+Widget _buildMenuCard(BuildContext context,
+    {required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap}) {
+  return Card(
+    elevation: 5,
+    shadowColor: color.withOpacity(0.3),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    clipBehavior: Clip.antiAlias,
+    margin: const EdgeInsets.only(bottom: 16),
+    child: InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+          colors: [color.withOpacity(0.8), color],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        )),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.white.withOpacity(0.9),
+              child: Icon(icon, color: color, size: 32),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 14, color: Colors.white.withOpacity(0.9))),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 // 1. Halaman Hub untuk Menu "Inspeksi"
 class InspectionHubPage extends StatelessWidget {
   const InspectionHubPage({super.key});
@@ -202,63 +256,6 @@ class LoggingHubPage extends StatelessWidget {
       ),
     );
   }
-
-  // Helper widget baru untuk kartu menu di halaman hub
-  Widget _buildMenuCard(BuildContext context,
-      {required String title,
-      required String subtitle,
-      required IconData icon,
-      required Color color,
-      required VoidCallback onTap}) {
-    return Card(
-      elevation: 5,
-      shadowColor: color.withOpacity(0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              gradient: LinearGradient(
-            colors: [color.withOpacity(0.8), color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Colors.white.withOpacity(0.9),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                    const SizedBox(height: 4),
-                    Text(subtitle,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9))),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios,
-                  color: Colors.white, size: 18),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // 3. Halaman Hub untuk Menu "Riwayat"
@@ -268,34 +265,57 @@ class HistoryHubPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Riwayat")),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildMenuButton(
-            context,
-            icon: Icons.history_outlined,
-            label: "Riwayat Inspeksi",
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const HistoryPage())),
-          ),
-          _buildMenuButton(
-            context,
-            icon: Icons.history_edu_outlined,
-            label: "Riwayat Pencucian",
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const WashingHistoryPage())),
-          ),
-          _buildMenuButton(
-            context,
-            icon: Icons.plumbing_outlined,
-            label: "Record Maintenance",
-            onTap: () => Navigator.push(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text("Riwayat"),
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
+      ),
+      body: AnimationLimiter(
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: AnimationConfiguration.toStaggeredList(
+            duration: const Duration(milliseconds: 375),
+            childAnimationBuilder: (widget) => SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(child: widget),
+            ),
+            children: [
+              _buildMenuCard(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const MaintenanceHistoryPage())),
+                title: "Riwayat Inspeksi",
+                subtitle: "Lihat semua hasil inspeksi yang telah selesai",
+                icon: Icons.manage_search_rounded,
+                color: Colors.teal,
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const HistoryPage())),
+              ),
+              _buildMenuCard(
+                context,
+                title: "Riwayat Pencucian",
+                subtitle: "Lacak semua catatan pencucian unit storage",
+                icon: Icons.water_drop_outlined,
+                color: Colors.lightBlue,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const WashingHistoryPage())),
+              ),
+              _buildMenuCard(
+                context,
+                title: "Riwayat Perbaikan",
+                subtitle: "Lihat semua riwayat perbaikan yang telah dicatat",
+                icon: Icons.history_edu_rounded,
+                color: Colors.indigo,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MaintenanceHistoryPage())),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -310,18 +330,18 @@ class MainNavigationPage extends StatefulWidget {
 }
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
-  int _selectedIndex = 0;
+  int selectedIndex = 0;
 
-  void _onItemTapped(int index) {
+  void onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
-      HomePage(onNavigateToTab: _onItemTapped), // <- Perubahan di sini
+      HomePage(onNavigateToTab: onItemTapped), // <- Perubahan di sini
       const InspectionHubPage(),
       const LoggingHubPage(),
       const HistoryHubPage(),
@@ -329,7 +349,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex,
+        index: selectedIndex,
         children: pages,
       ),
       bottomNavigationBar: Container(
@@ -349,10 +369,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(Icons.dashboard_rounded, 'Beranda', 0),
-            _buildNavItem(Icons.fact_check_rounded, 'Inspeksi', 1),
-            _buildNavItem(Icons.edit_note_rounded, 'Pencatatan', 2),
-            _buildNavItem(Icons.history_rounded, 'Riwayat', 3),
+            buildNavItem(Icons.dashboard_rounded, 'Beranda', 0),
+            buildNavItem(Icons.fact_check_rounded, 'Inspeksi', 1),
+            buildNavItem(Icons.edit_note_rounded, 'Pencatatan', 2),
+            buildNavItem(Icons.history_rounded, 'Riwayat', 3),
           ],
         ),
       ),
@@ -360,16 +380,16 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 
   // Helper widget untuk membuat setiap item navigasi dengan animasi
-  Widget _buildNavItem(IconData icon, String label, int index) {
+  Widget buildNavItem(IconData icon, String label, int index) {
     return InkWell(
-      onTap: () => _onItemTapped(index),
+      onTap: () => onItemTapped(index),
       borderRadius: BorderRadius.circular(30),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: _selectedIndex == index
+          color: selectedIndex == index
               ? AppTheme.primary.withOpacity(0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
@@ -377,13 +397,13 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         child: Row(
           children: [
             Icon(icon,
-                color: _selectedIndex == index
+                color: selectedIndex == index
                     ? AppTheme.primary
                     : Colors.grey[600]),
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
-              child: _selectedIndex == index
+              child: selectedIndex == index
                   ? Padding(
                       padding: const EdgeInsets.only(left: 8.0),
                       child: Text(
@@ -401,25 +421,4 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       ),
     );
   }
-}
-
-// Helper widget untuk tombol menu di halaman Hub
-Widget _buildMenuButton(BuildContext context,
-    {required IconData icon,
-    required String label,
-    required VoidCallback onTap}) {
-  return Card(
-    elevation: 2,
-    margin: const EdgeInsets.only(bottom: 12),
-    shadowColor: AppTheme.primary.withOpacity(0.1),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    child: ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Icon(icon, size: 28, color: AppTheme.primary),
-      title: Text(label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-    ),
-  );
 }

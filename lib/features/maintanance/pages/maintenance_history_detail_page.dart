@@ -45,41 +45,46 @@ class MaintenanceHistoryDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final unitCode = record['unit_code'] ?? 'N/A';
     final unitType = record['unit_type'] ?? '';
-    final itemName = record['item_name'] ?? 'Item tidak diketahui';
-    final problemNotes = record['problem_notes'] ?? 'N/A';
-    final repairNotes = record['repair_notes'] ?? 'Tidak ada catatan.';
+    final itemName =
+        record['item_name'] ?? record['custom_title'] ?? 'Item tidak diketahui';
+    final problemNotes =
+        record['problem_notes'] ?? 'Tidak ada catatan masalah.';
+    final repairNotes =
+        record['repair_notes'] ?? 'Tidak ada catatan perbaikan.';
     final repairedBy = record['repaired_by'] ?? 'Tidak diketahui';
     final utcDate = DateTime.parse(record['repaired_at']);
-    final localDate = utcDate.toLocal(); // <-- Tambahkan baris ini
-    final formattedDate =
-        DateFormat('d MMMM yyyy, HH:mm').format(localDate); // Gunakan localDate
+    final localDate = utcDate.toLocal();
+    final formattedDate = DateFormat('d MMMM yyyy, HH:mm').format(localDate);
     final problemPhotoUrl = record['problem_photo_url'];
     final repairPhotoUrl = record['repair_photo_url'];
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text(itemName),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        title:
+            Text(itemName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           _buildHeader("Detail Unit", "$unitCode ($unitType)"),
-          const SizedBox(height: 16),
-          _buildHeader("Detail Laporan Masalah", itemName),
-          const Divider(),
+          const SizedBox(height: 24),
+          _buildSectionTitle("Laporan Masalah"),
+          _buildInfoCard("Item/Judul Masalah", itemName),
+          _buildInfoCard("Keterangan Masalah", problemNotes),
           if (problemPhotoUrl != null)
             _buildPhotoCard(context, "Foto Masalah", problemPhotoUrl),
-          _buildInfoCard("Keterangan Masalah", problemNotes),
           const SizedBox(height: 24),
-          _buildHeader("Detail Perbaikan", "Dicatat oleh $repairedBy"),
-          const Divider(),
-          if (repairPhotoUrl != null)
-            _buildPhotoCard(context, "Foto Perbaikan", repairPhotoUrl),
+          _buildSectionTitle("Detail Perbaikan"),
           _buildInfoCard("Catatan Perbaikan", repairNotes),
+          _buildInfoCard("Diperbaiki Oleh", repairedBy),
           _buildInfoCard("Tanggal Perbaikan", formattedDate,
               icon: Icons.calendar_today),
+          if (repairPhotoUrl != null)
+            _buildPhotoCard(context, "Foto Perbaikan", repairPhotoUrl),
         ],
       ),
     );
@@ -89,42 +94,67 @@ class MaintenanceHistoryDetailPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTextStyles.subtitle),
+        Text(title, style: AppTextStyles.subtitle.copyWith(fontSize: 22)),
         Text(subtitle,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textSecondary)),
       ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(title,
+          style: AppTextStyles.subtitle.copyWith(color: AppTheme.primary)),
     );
   }
 
   Widget _buildInfoCard(String title, String content, {IconData? icon}) {
     return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(top: 8),
       child: ListTile(
-        leading: icon != null ? Icon(icon, color: AppTheme.primary) : null,
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(content, style: const TextStyle(fontSize: 16)),
+        leading:
+            icon != null ? Icon(icon, color: AppTheme.textSecondary) : null,
+        title: Text(title,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: AppTheme.textSecondary)),
+        subtitle: Text(content,
+            style: AppTextStyles.body
+                .copyWith(color: AppTheme.textPrimary, fontSize: 16)),
       ),
     );
   }
 
   Widget _buildPhotoCard(BuildContext context, String title, String imageUrl) {
     return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(top: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showPhotoViewer(context, imageUrl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () => _showPhotoViewer(context, imageUrl),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(imageUrl,
-                    height: 200, width: double.infinity, fit: BoxFit.cover),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text(title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.textSecondary)),
             ),
+            Image.network(imageUrl,
+                height: 200, width: double.infinity, fit: BoxFit.cover),
           ],
         ),
       ),

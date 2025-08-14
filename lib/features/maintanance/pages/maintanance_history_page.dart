@@ -1,6 +1,7 @@
 // lib/features/maintenance/pages/maintenance_history_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
 import 'package:gasra_monitoring/core/theme.dart';
 import 'package:gasra_monitoring/features/maintanance/pages/maintenance_history_detail_page.dart';
@@ -40,6 +41,19 @@ class _MaintenanceHistoryPageState extends State<MaintenanceHistoryPage> {
     return List<Map<String, dynamic>>.from(response ?? []);
   }
 
+  Color _getColorForUnitType(String type) {
+    switch (type) {
+      case 'Head':
+        return AppTheme.logoRed;
+      case 'Chassis':
+        return AppTheme.logoAbu;
+      case 'Storage':
+        return AppTheme.logoBiru;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildChip(String label, int count, bool isSelected) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -71,225 +85,175 @@ class _MaintenanceHistoryPageState extends State<MaintenanceHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text("Riwayat Perbaikan"),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _historyFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Terjadi error: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Belum ada riwayat perbaikan."));
-          }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari berdasarkan kode unit...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<dynamic>>(
+              future: _historyFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text("Terjadi error: ${snapshot.error}"));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                      child: Text("Belum ada riwayat perbaikan."));
+                }
 
-          final allRecords = snapshot.data!;
-          final categoryFiltered = allRecords.where((record) {
-            final type = record['unit_type'] as String? ?? '';
-            if (_selectedFilter == 'Semua') return true;
-            return type == _selectedFilter;
-          }).toList();
-          final filteredRecords = categoryFiltered.where((record) {
-            final unitCode = record['unit_code'] as String? ?? '';
-            return unitCode.toLowerCase().contains(_searchQuery.toLowerCase());
-          }).toList();
-          final counts = {
-            'Head': allRecords
-                .where((r) => (r['unit_type'] as String? ?? '') == 'Head')
-                .length,
-            'Chassis': allRecords
-                .where((r) => (r['unit_type'] as String? ?? '') == 'Chassis')
-                .length,
-            'Storage': allRecords
-                .where((r) => (r['unit_type'] as String? ?? '') == 'Storage')
-                .length,
-          };
+                final allRecords = snapshot.data!;
+                final categoryFiltered = allRecords.where((record) {
+                  final type = record['unit_type'] as String? ?? '';
+                  if (_selectedFilter == 'Semua') return true;
+                  return type == _selectedFilter;
+                }).toList();
+                final filteredRecords = categoryFiltered.where((record) {
+                  final unitCode = record['unit_code'] as String? ?? '';
+                  return unitCode
+                      .toLowerCase()
+                      .contains(_searchQuery.toLowerCase());
+                }).toList();
+                final counts = {
+                  'Head': allRecords
+                      .where((r) => (r['unit_type'] as String? ?? '') == 'Head')
+                      .length,
+                  'Chassis': allRecords
+                      .where(
+                          (r) => (r['unit_type'] as String? ?? '') == 'Chassis')
+                      .length,
+                  'Storage': allRecords
+                      .where(
+                          (r) => (r['unit_type'] as String? ?? '') == 'Storage')
+                      .length,
+                };
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Cari berdasarkan kode unit...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                return Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Row(
+                          children: [
+                            _buildChip('Semua', allRecords.length,
+                                _selectedFilter == 'Semua'),
+                            _buildChip('Head', counts['Head']!,
+                                _selectedFilter == 'Head'),
+                            _buildChip('Chassis', counts['Chassis']!,
+                                _selectedFilter == 'Chassis'),
+                            _buildChip('Storage', counts['Storage']!,
+                                _selectedFilter == 'Storage'),
+                          ],
+                        ),
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Row(
-                    children: [
-                      _buildChip('Semua', allRecords.length,
-                          _selectedFilter == 'Semua'),
-                      _buildChip(
-                          'Head', counts['Head']!, _selectedFilter == 'Head'),
-                      _buildChip('Chassis', counts['Chassis']!,
-                          _selectedFilter == 'Chassis'),
-                      _buildChip('Storage', counts['Storage']!,
-                          _selectedFilter == 'Storage'),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async => setState(
-                      () => _historyFuture = _fetchMaintenanceHistory()),
-                  child: filteredRecords.isEmpty
-                      ? const Center(child: Text("Tidak ada hasil yang cocok."))
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          itemCount: filteredRecords.length,
-                          itemBuilder: (context, index) {
-                            final record = filteredRecords[index];
-                            final unitCode = record['unit_code'] ?? 'N/A';
-                            final unitType = record['unit_type'] ?? '';
-                            final itemName =
-                                record['item_name'] ?? 'Item tidak diketahui';
-                            final problemNotes =
-                                record['problem_notes'] ?? 'N/A';
-                            final repairNotes =
-                                record['repair_notes'] ?? 'Tidak ada catatan.';
-                            final repairedBy =
-                                record['repaired_by'] ?? 'Tidak diketahui';
-                            // KODE BARU
-                            final utcDate =
-                                DateTime.parse(record['repaired_at']);
-                            final localDate =
-                                utcDate.toLocal(); // <-- Tambahkan baris ini
-                            final formattedDate =
-                                DateFormat('d MMMM yyyy, HH:mm')
-                                    .format(localDate); // Gunakan localDate
-                            IconData unitIcon = Icons.article;
-                            if (unitType == 'Head')
-                              unitIcon = Icons.fire_truck_outlined;
-                            else if (unitType == 'Chassis')
-                              unitIcon = Icons.miscellaneous_services_outlined;
-                            else if (unitType == 'Storage')
-                              unitIcon = Icons.inventory_2_outlined;
-
-                            return Card(
-                              elevation: 2,
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
-                              child: ListTile(
-                                // [DIUBAH] Menggunakan ListTile agar bisa onTap
-                                contentPadding: const EdgeInsets.all(16),
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) =>
-                                              MaintenanceHistoryDetailPage(
-                                                  record: record as Map<String,
-                                                      dynamic>)));
-                                },
-                                title: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8, horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            AppTheme.primary.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async => setState(
+                            () => _historyFuture = _fetchMaintenanceHistory()),
+                        child: filteredRecords.isEmpty
+                            ? const Center(
+                                child: Text("Tidak ada hasil yang cocok."))
+                            : AnimationLimiter(
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: filteredRecords.length,
+                                  itemBuilder: (context, index) {
+                                    return AnimationConfiguration.staggeredList(
+                                      position: index,
+                                      duration:
+                                          const Duration(milliseconds: 375),
+                                      child: SlideAnimation(
+                                        verticalOffset: 50.0,
+                                        child: FadeInAnimation(
+                                            child: _buildHistoryCard(
+                                                filteredRecords[index])),
                                       ),
-                                      child: Row(
-                                        children: [
-                                          Icon(unitIcon,
-                                              color: AppTheme.primary,
-                                              size: 20),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              "$unitCode ($unitType)",
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                  color: AppTheme.primary),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Divider(height: 24),
-                                    Text(itemName,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 17,
-                                            color: Colors.black87)),
-                                    const SizedBox(height: 12),
-                                    _buildInfoRow(
-                                        Icons.report_problem_outlined,
-                                        "Masalah:",
-                                        problemNotes,
-                                        Colors.red[700]),
-                                    const SizedBox(height: 8),
-                                    _buildInfoRow(
-                                        Icons.build_circle_outlined,
-                                        "Perbaikan:",
-                                        repairNotes,
-                                        Colors.green[800]),
-                                    const SizedBox(height: 8),
-                                    _buildInfoRow(
-                                        Icons.person_outline,
-                                        "Diperbaiki Oleh:",
-                                        repairedBy,
-                                        Colors.grey[700]),
-                                    const SizedBox(height: 8),
-                                    _buildInfoRow(
-                                        Icons.calendar_today_outlined,
-                                        "Tanggal:",
-                                        formattedDate,
-                                        Colors.grey[700]),
-                                  ],
+                                    );
+                                  },
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                ),
-              ),
-            ],
-          );
-        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value,
-      [Color? iconColor]) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: iconColor ?? Colors.grey[600]),
-        const SizedBox(width: 8),
-        Text("$label ", style: TextStyle(color: Colors.grey[700])),
-        Expanded(
-            child: Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w500))),
-      ],
+  Widget _buildHistoryCard(Map<String, dynamic> record) {
+    final unitCode = record['unit_code'] ?? 'N/A';
+    final unitType = record['unit_type'] ?? '';
+    final itemName =
+        record['item_name'] ?? record['custom_title'] ?? 'Item tidak diketahui';
+    final repairedBy = record['repaired_by'] ?? 'Tidak diketahui';
+    final utcDate = DateTime.parse(record['repaired_at']);
+    final localDate = utcDate.toLocal();
+    final formattedDate = DateFormat('d MMM yyyy, HH:mm').format(localDate);
+    final unitColor = _getColorForUnitType(unitType);
+
+    IconData unitIcon = Icons.article;
+    if (unitType == 'Head')
+      unitIcon = Icons.fire_truck_rounded;
+    else if (unitType == 'Chassis')
+      unitIcon = Icons.miscellaneous_services_rounded;
+    else if (unitType == 'Storage') unitIcon = Icons.inventory_2_rounded;
+
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      MaintenanceHistoryDetailPage(record: record)));
+        },
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        leading: CircleAvatar(
+            backgroundColor: unitColor.withOpacity(0.1),
+            child: Icon(unitIcon, color: unitColor)),
+        title: Text(itemName,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Text('Unit $unitCode \nOleh: $repairedBy'),
+        trailing: Text(formattedDate,
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ),
     );
   }
 }

@@ -40,10 +40,12 @@ class _WashingDetailPageState extends State<WashingDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: Text("Riwayat: ${widget.storageCode}"),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.background,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _detailFuture,
@@ -62,7 +64,7 @@ class _WashingDetailPageState extends State<WashingDetailPage> {
 
           final records = snapshot.data!;
           return ListView.builder(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             itemCount: records.length,
             itemBuilder: (context, index) {
               final record = records[index];
@@ -72,25 +74,28 @@ class _WashingDetailPageState extends State<WashingDetailPage> {
                   ? record['notes']
                   : 'Tidak ada catatan.';
               final utcDate = DateTime.parse(record['washed_at']);
-              final localDate = utcDate.toLocal(); // <-- Tambahkan baris ini
-              final formattedDate = DateFormat('d MMMM yyyy, HH:mm')
-                  .format(localDate); // Gunakan localDate
+              final localDate = utcDate.toLocal();
+              final formattedDate =
+                  DateFormat('d MMMM yyyy, HH:mm').format(localDate);
 
               return Card(
                 elevation: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                shadowColor: Colors.black.withOpacity(0.05),
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow(Icons.calendar_today_outlined, "Tanggal:",
-                          formattedDate),
-                      const SizedBox(height: 8),
+                      Text(formattedDate,
+                          style: AppTextStyles.subtitle.copyWith(fontSize: 18)),
+                      const Divider(),
                       _buildInfoRow(
-                          Icons.person_outline, "Dicuci Oleh:", washedBy),
+                          Icons.person_outline, "Dicuci Oleh", washedBy),
                       const SizedBox(height: 8),
-                      _buildInfoRow(Icons.note_alt_outlined, "Catatan:", notes),
+                      _buildInfoRow(Icons.note_alt_outlined, "Catatan", notes),
                     ],
                   ),
                 ),
@@ -102,17 +107,17 @@ class _WashingDetailPageState extends State<WashingDetailPage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value,
-      [Color? iconColor]) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: iconColor ?? Colors.grey[600]),
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Text("$label:",
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.grey[800])),
         const SizedBox(width: 8),
-        Text("$label ", style: TextStyle(color: Colors.grey[700])),
-        Expanded(
-            child: Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w500))),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 15))),
       ],
     );
   }
