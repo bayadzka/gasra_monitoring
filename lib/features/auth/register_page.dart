@@ -1,13 +1,13 @@
 // lib/features/auth/widgets/register_form.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
 import 'package:gasra_monitoring/core/theme.dart';
-import 'package:simple_animations/simple_animations.dart';
 
 class RegisterForm extends StatefulWidget {
   final ScrollController scrollController;
-  final VoidCallback onSwitchToLogin; // Callback untuk pindah
+  final VoidCallback onSwitchToLogin;
 
   const RegisterForm(
       {super.key,
@@ -25,6 +25,14 @@ class _RegisterFormState extends State<RegisterForm> {
   final passwordController = TextEditingController();
   bool isLoading = false;
   bool _obscureText = true;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   void register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -46,68 +54,67 @@ class _RegisterFormState extends State<RegisterForm> {
         Navigator.of(context).pop(); // Tutup bottom sheet setelah berhasil
       }
     } catch (e) {
-      _showError(e.toString());
+      _showError("Registrasi Gagal: ${e.toString()}");
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
   void _showError(String message) {
-    if (mounted) {
-      // [FIX] Menggunakan context dari widget ini, bukan dari halaman sebelumnya
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating, // Membuatnya melayang
-          margin: EdgeInsets.only(
-              // Atur margin agar di atas
-              bottom: MediaQuery.of(context).size.height - 150,
-              left: 16,
-              right: 16),
-        ),
-      );
-    }
-  }
+    if (!mounted) return;
 
-  @override
-  void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.error,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 150,
+          left: 16,
+          right: 16,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return SingleChildScrollView(
       controller: widget.scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      children: [
-        PlayAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 800),
-          builder: (context, value, child) {
-            return Opacity(
-              opacity: value,
-              child: Transform.translate(
-                offset: Offset(0, 50 * (1 - value)),
-                child: child,
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: AnimationLimiter(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: AnimationConfiguration.toStaggeredList(
+              duration: const Duration(milliseconds: 400),
+              childAnimationBuilder: (widget) => SlideAnimation(
+                verticalOffset: 50.0,
+                child: FadeInAnimation(child: widget),
               ),
-            );
-          },
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 16),
-                const Text(
-                  "Buat Akun Baru",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.title,
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 50,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 24),
+                const Text("Buat Akun Baru",
+                    textAlign: TextAlign.center, style: AppTextStyles.title),
                 const SizedBox(height: 8),
                 Text(
                   "Isi data diri Anda untuk memulai",
@@ -148,14 +155,12 @@ class _RegisterFormState extends State<RegisterForm> {
                           .copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: AppTheme.textSecondary,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureText = !_obscureText;
-                        });
-                      },
+                          _obscureText
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppTheme.textSecondary),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
                     ),
                   ),
                   validator: (value) {
@@ -168,11 +173,14 @@ class _RegisterFormState extends State<RegisterForm> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: isLoading ? null : register,
-                  style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
-                      padding: WidgetStateProperty.all(
-                          const EdgeInsets.symmetric(vertical: 16))),
+                  style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16)),
                   child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5))
                       : const Text("Daftar"),
                 ),
                 const SizedBox(height: 16),
@@ -190,14 +198,14 @@ class _RegisterFormState extends State<RegisterForm> {
             ),
           ),
         ),
-      ],
+      ),
     );
   }
+}
 
-  InputDecoration _buildInputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: AppTheme.primary.withOpacity(0.7)),
-    );
-  }
+InputDecoration _buildInputDecoration(String label, IconData icon) {
+  return InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, color: AppTheme.primary.withOpacity(0.7)),
+  );
 }

@@ -1,6 +1,7 @@
 // lib/navigation/main_navigation_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:gasra_monitoring/core/theme.dart';
 
@@ -331,6 +332,7 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int selectedIndex = 0;
+  DateTime? _lastBackPressed;
 
   void onItemTapped(int index) {
     setState(() {
@@ -347,36 +349,75 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       const HistoryHubPage(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: selectedIndex,
-        children: pages,
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(50),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+    return PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          if (didPop) return;
+
+          // Logika "Tekan lagi untuk keluar"
+          if (selectedIndex == 0) {
+            final now = DateTime.now();
+            final shouldExit = _lastBackPressed != null &&
+                now.difference(_lastBackPressed!) < const Duration(seconds: 2);
+
+            if (shouldExit) {
+              // [FIX] Gunakan SystemNavigator.pop() untuk keluar dari aplikasi
+              SystemNavigator.pop();
+            } else {
+              _lastBackPressed = now;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tekan sekali lagi untuk keluar'),
+                  duration: Duration(seconds: 2),
+                  behavior:
+                      SnackBarBehavior.floating, // Agar terlihat lebih modern
+                  margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12))),
+                ),
+              );
+            }
+          } else {
+            // Jika bukan di Beranda, kembali ke Beranda
+            onItemTapped(0);
+          }
+        },
+        child: Scaffold(
+          extendBody: true, // Membuat body bisa berada di belakang bottom bar
+          backgroundColor: AppTheme.background, // Latar belakang utama
+          body: IndexedStack(
+            index: selectedIndex,
+            children: pages,
+          ),
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              margin: const EdgeInsets.fromLTRB(
+                  24, 0, 24, 12), // Margin bawah disesuaikan
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(50),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  buildNavItem(Icons.dashboard_rounded, 'Beranda', 0),
+                  buildNavItem(Icons.fact_check_rounded, 'Inspeksi', 1),
+                  buildNavItem(Icons.edit_note_rounded, 'Pencatatan', 2),
+                  buildNavItem(Icons.history_rounded, 'Riwayat', 3),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            buildNavItem(Icons.dashboard_rounded, 'Beranda', 0),
-            buildNavItem(Icons.fact_check_rounded, 'Inspeksi', 1),
-            buildNavItem(Icons.edit_note_rounded, 'Pencatatan', 2),
-            buildNavItem(Icons.history_rounded, 'Riwayat', 3),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 
   // Helper widget untuk membuat setiap item navigasi dengan animasi

@@ -1,6 +1,7 @@
 // lib/features/auth/widgets/login_form.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
 import 'package:gasra_monitoring/core/theme.dart';
 import 'package:gasra_monitoring/features/auth/providers/auth_provider.dart';
@@ -59,18 +60,24 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    if (!mounted) return;
+
+    // Menggunakan context dari widget ini untuk memastikan SnackBar
+    // muncul di atas bottom sheet.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.error,
+        behavior: SnackBarBehavior.floating, // Membuatnya melayang
+        margin: EdgeInsets.only(
+          // Atur margin agar berada di atas
+          bottom: MediaQuery.of(context).size.height - 150,
+          left: 16,
+          right: 16,
         ),
-      );
-    }
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   InputDecoration _buildInputDecoration(String label, IconData icon) {
@@ -89,102 +96,116 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    // [DIUBAH] Menggunakan SingleChildScrollView agar bisa di-scroll
-    // dan Padding dinamis untuk mengatasi keyboard.
     return SingleChildScrollView(
       controller: widget.scrollController,
-      // Padding ini akan secara otomatis mendorong konten ke atas saat keyboard muncul
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
-        top: 5,
+        top: 16,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Image.asset('assets/images/logo.png', height: 70),
-            const SizedBox(height: 16),
-            const Text(
-              "Selamat Datang Kembali",
-              textAlign: TextAlign.center,
-              style: AppTextStyles.title,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Masuk ke akun Anda",
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(fontSize: 16),
-            ),
-            const SizedBox(height: 32),
-            TextFormField(
-              controller: emailController,
-              decoration: _buildInputDecoration("Email", Icons.email_outlined),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || !value.contains('@')) {
-                  return 'Masukkan email yang valid';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: passwordController,
-              obscureText: _obscureText,
-              decoration: _buildInputDecoration("Password", Icons.lock_outline)
-                  .copyWith(
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureText ? Icons.visibility_off : Icons.visibility,
-                    color: AppTheme.textSecondary,
+      child: AnimationLimiter(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: AnimationConfiguration.toStaggeredList(
+              duration: const Duration(milliseconds: 400),
+              childAnimationBuilder: (widget) => SlideAnimation(
+                verticalOffset: 50.0,
+                child: FadeInAnimation(child: widget),
+              ),
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 50,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureText = !_obscureText;
-                    });
+                ),
+                const SizedBox(height: 24),
+                Image.asset('assets/images/logo.png', height: 60),
+                const SizedBox(height: 16),
+                const Text(
+                  "Login", // [DIUBAH] Disederhanakan
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.title,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Masuk ke akun Anda",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(fontSize: 16),
+                ),
+                const SizedBox(height: 32),
+                TextFormField(
+                  controller: emailController,
+                  decoration:
+                      _buildInputDecoration("Email", Icons.email_outlined),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || !value.contains('@')) {
+                      return 'Masukkan email yang valid';
+                    }
+                    return null;
                   },
                 ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Password tidak boleh kosong';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: isLoading ? null : login,
-              style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
-                  padding: WidgetStateProperty.all(
-                      const EdgeInsets.symmetric(vertical: 16))),
-              child: isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : const Text("Masuk"),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Belum punya akun?"),
-                TextButton(
-                  onPressed: widget.onSwitchToRegister,
-                  child: const Text("Daftar di sini"),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: _obscureText,
+                  decoration:
+                      _buildInputDecoration("Password", Icons.lock_outline)
+                          .copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                          _obscureText
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppTheme.textSecondary),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: isLoading ? null : login,
+                  style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16)),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5))
+                      : const Text("Masuk"),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Belum punya akun?"),
+                    TextButton(
+                      onPressed: widget.onSwitchToRegister,
+                      child: const Text("Daftar di sini"),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

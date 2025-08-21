@@ -47,9 +47,8 @@ class _HistoryPageState extends State<HistoryPage> {
         .from('inspections')
         .select(
             '*, heads!inspections_head_id_fkey(head_code), chassis!inspections_chassis_id_fkey(chassis_code), storages!inspections_storage_id_fkey(storage_code), profiles(name)')
-        .order('tanggal',
-            ascending:
-                false); // Menggunakan 'tanggal' sesuai kode Anda sebelumnya
+        .order('tanggal', ascending: false); // [FIX] Menggunakan 'tanggal'
+
     return List<Map<String, dynamic>>.from(response);
   }
 

@@ -190,18 +190,20 @@ class _WashingLogPageState extends State<WashingLogPage> {
               ),
             ],
           ),
-          bottomNavigationBar: Container(
-            color: AppTheme.background,
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.save_alt_outlined),
-              label: const Text("Konfirmasi & Simpan"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              color: AppTheme.background,
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.save_alt_outlined),
+                label: const Text("Konfirmasi & Simpan"),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        AppTheme.primary, // Menggunakan warna dari tema
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12)),
+                onPressed: _isSubmitting ? null : _submitWashingLog,
               ),
-              onPressed: _isSubmitting ? null : _submitWashingLog,
             ),
           ),
         ));

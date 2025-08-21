@@ -75,6 +75,7 @@ class _StorageListPageState extends State<StorageListPage> {
     final lastInspectionDateString = storage['last_inspection_date'];
     bool proceed = true;
 
+    // FIX: Tambahkan kondisi !widget.isForReport
     if (lastInspectionDateString != null && !widget.isForReport) {
       final lastInspectionDate = DateTime.parse(lastInspectionDateString);
       final now = DateTime.now();
@@ -222,14 +223,30 @@ class _StorageListPageState extends State<StorageListPage> {
 
   Widget _buildUnitCard(Map<String, dynamic> storage) {
     final storageCode = storage['storage_code'] as String;
-    final lastInspectionDate = storage['last_inspection_date'];
 
-    bool hasBeenInspected = lastInspectionDate != null;
-    Color statusColor = hasBeenInspected ? Colors.green : Colors.red;
-    String statusText = 'Belum Diperiksa';
-    if (hasBeenInspected) {
-      statusText =
-          'Terakhir diperiksa: ${DateFormat('d MMM yyyy').format(DateTime.parse(lastInspectionDate).toLocal())}';
+    // Logika status hanya disiapkan jika BUKAN untuk lapor masalah
+    Widget? statusSubtitle;
+    Widget? statusIndicator;
+
+    if (!widget.isForReport) {
+      final lastInspectionDate = storage['last_inspection_date'];
+      bool hasBeenInspected = lastInspectionDate != null;
+      Color statusColor = hasBeenInspected ? Colors.green : Colors.red;
+      String statusText = 'Belum Diperiksa';
+      if (hasBeenInspected) {
+        statusText =
+            'Terakhir diperiksa: ${DateFormat('d MMM yyyy').format(DateTime.parse(lastInspectionDate).toLocal())}';
+      }
+      statusSubtitle =
+          Text(statusText, style: TextStyle(color: statusColor, fontSize: 12));
+      statusIndicator = Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Icons.circle, color: statusColor, size: 12),
+      );
     }
 
     return Card(
@@ -243,18 +260,10 @@ class _StorageListPageState extends State<StorageListPage> {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         title: Text(storageCode,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-        subtitle: widget.isForReport
-            ? null
-            : Text(statusText,
-                style: TextStyle(color: statusColor, fontSize: 12)),
-        trailing: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.circle, color: statusColor, size: 12),
-        ),
+        subtitle: statusSubtitle, // Tampilkan subtitle jika ada
+        trailing: statusIndicator ??
+            const Icon(Icons.arrow_forward_ios,
+                size: 16), // Tampilkan indikator status atau panah
       ),
     );
   }

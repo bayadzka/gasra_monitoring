@@ -94,6 +94,33 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
 
     final List<Map<String, dynamic>> items =
         List<Map<String, dynamic>>.from(response);
+
+    // [FIX] Logika pengurutan kustom untuk item "Ban"
+    items.sort((a, b) {
+      String nameA = a['name'] as String;
+      String nameB = b['name'] as String;
+
+      // Fungsi untuk mengekstrak angka dari nama item
+      int? extractNumber(String text) {
+        final match = RegExp(r'(\d+)').firstMatch(text);
+        return match != null ? int.parse(match.group(1)!) : null;
+      }
+
+      int? numA = extractNumber(nameA);
+      int? numB = extractNumber(nameB);
+
+      // Jika keduanya adalah item "Ban" dengan angka, urutkan secara numerik
+      if (nameA.contains('Ban') &&
+          nameB.contains('Ban') &&
+          numA != null &&
+          numB != null) {
+        return numA.compareTo(numB);
+      }
+
+      // Jika tidak, urutkan secara alfabet
+      return nameA.compareTo(nameB);
+    });
+
     return items;
   }
 
@@ -303,17 +330,20 @@ class _ReportProblemPageState extends State<ReportProblemPage> {
           );
         },
       ),
-      bottomNavigationBar: Container(
-        color: AppTheme.background,
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton.icon(
-          icon: const Icon(Icons.send),
-          label: const Text("Kirim Laporan"),
-          style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              textStyle:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          onPressed: _isSubmitting || !_isFormValid() ? null : _submitReport,
+      bottomNavigationBar: SafeArea(
+        // [FIX] Bungkus dengan SafeArea
+        child: Container(
+          color: AppTheme.background,
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.send),
+            label: const Text("Kirim Laporan"),
+            style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                textStyle:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            onPressed: _isSubmitting || !_isFormValid() ? null : _submitReport,
+          ),
         ),
       ),
     );

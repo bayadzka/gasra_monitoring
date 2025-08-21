@@ -137,7 +137,7 @@ class StorageInspectionProvider extends BaseInspectionProvider {
       final inspectionData = {
         'storage_id': int.tryParse(selectedStorageId!),
         'inspector_id': user.id,
-        'tanggal': DateTime.now().toIso8601String(),
+        'tanggal': DateTime.now().toUtc().toIso8601String(),
       };
 
       final insertedInspection = await supabase

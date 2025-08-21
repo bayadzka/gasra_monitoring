@@ -8,6 +8,7 @@ import 'package:gasra_monitoring/features/auth/providers/auth_provider.dart';
 import 'package:gasra_monitoring/features/history/history_page.dart';
 import 'package:gasra_monitoring/features/maintanance/pages/maintanance_history_page.dart';
 import 'package:gasra_monitoring/features/maintanance/pages/maintenance_detail_page.dart';
+import 'package:gasra_monitoring/features/maintanance/pages/maintenance_history_detail_page.dart';
 import 'package:gasra_monitoring/features/maintanance/pages/maintenance_list_page.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -141,104 +142,191 @@ class _HomePageState extends State<HomePage> {
     final data = snapshot.data!;
     final stats = data['stats'] ?? {};
     final tugas = List<Map<String, dynamic>>.from(data['tugas_mendesak'] ?? []);
+    final perbaikanTerbaru =
+        List<Map<String, dynamic>>.from(data['perbaikan_terbaru'] ?? []);
 
-    return AnimationLimiter(
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        children: AnimationConfiguration.toStaggeredList(
-          duration: const Duration(milliseconds: 375),
-          childAnimationBuilder: (widget) => SlideAnimation(
-              verticalOffset: 50.0, child: FadeInAnimation(child: widget)),
-          children: [
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.8,
-              children: [
-                _buildStatCard(
-                    "Inspeksi Bulan Ini",
-                    stats['inspeksi_bulan_ini'].toString(),
-                    Icons.calendar_today,
-                    Colors.blue,
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const HistoryPage()))),
-                _buildStatCard(
-                    "Perlu Perbaikan",
-                    stats['perlu_perbaikan'].toString(),
-                    Icons.warning_amber_rounded,
-                    Colors.orange,
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const MaintenanceListPage()))),
-                _buildStatCard(
-                    "Perbaikan Selesai",
-                    stats['perbaikan_bulan_ini'].toString(),
-                    Icons.check_circle,
-                    Colors.green,
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const MaintenanceHistoryPage()))),
-                _buildStatCard(
-                  "Laporan Baru (24j)",
-                  stats['laporan_24_jam'].toString(),
-                  Icons.new_releases,
-                  Colors.red,
-                ),
+        child: AnimationLimiter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Setiap bagian konten dianimasikan secara terpisah
+              _buildAnimatedItem(
+                index: 0,
+                child: LayoutBuilder(builder: (context, constraints) {
+                  // spacing yang sama dengan Wrap
+                  const double spacing = 12;
+                  // lebar total yang tersedia sudah memperhitungkan Padding parent
+                  final double itemWidth = (constraints.maxWidth - spacing) / 2;
+                  // atur tinggi yang konsisten — sesuaikan 110/120 sesuai preferensi
+                  const double itemHeight = 120;
+
+                  return Wrap(
+                    spacing: spacing, // jarak horizontal antar card
+                    runSpacing: 12, // jarak vertikal antar baris
+                    children: [
+                      SizedBox(
+                        width: itemWidth,
+                        height: itemHeight,
+                        child: _buildStatCard(
+                          "Inspeksi Bulan Ini",
+                          stats['inspeksi_bulan_ini'].toString(),
+                          Icons.calendar_today,
+                          Colors.blue,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const HistoryPage()),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: itemWidth,
+                        height: itemHeight,
+                        child: _buildStatCard(
+                          "Perlu Perbaikan",
+                          stats['perlu_perbaikan'].toString(),
+                          Icons.warning_amber_rounded,
+                          Colors.orange,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const MaintenanceListPage()),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: itemWidth,
+                        height: itemHeight,
+                        child: _buildStatCard(
+                          "Perbaikan Selesai",
+                          stats['perbaikan_bulan_ini'].toString(),
+                          Icons.check_circle,
+                          Colors.green,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const MaintenanceHistoryPage()),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: itemWidth,
+                        height: itemHeight,
+                        child: _buildStatCard(
+                          "Laporan Baru (24j)",
+                          stats['laporan_24_jam'].toString(),
+                          Icons.new_releases,
+                          Colors.red,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+
+              // Widget tata letak (SizedBox, Judul) berada di luar animasi
+              const SizedBox(height: 24.0),
+              _buildSectionTitle("Aksi Cepat"),
+              const SizedBox(height: 12.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildQuickActionButton(
+                      "Mulai Inspeksi",
+                      Icons.fact_check_rounded,
+                      () => widget.onNavigateToTab(1)),
+                  _buildQuickActionButton(
+                      "Lapor Masalah",
+                      Icons.report_problem_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const ReportTypeSelectionPage()))),
+                  _buildQuickActionButton(
+                      "Catat Pencucian",
+                      Icons.wash_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const WashingLogPage()))),
+                ],
+              ),
+
+              if (tugas.isNotEmpty) ...[
+                const SizedBox(height: 24.0),
+                _buildSectionTitle("Perlu Perhatian Segera"),
+                const SizedBox(height: 8.0),
+                ..._buildAnimatedList(
+                    tugas.map((t) => _buildTaskCard(t)).toList()),
               ],
-            ),
-            _buildSectionTitle("Aksi Cepat"),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildQuickActionButton("Mulai Inspeksi",
-                    Icons.fact_check_rounded, () => widget.onNavigateToTab(1)),
-                _buildQuickActionButton(
-                    "Lapor Masalah",
-                    Icons.report_problem_rounded,
-                    () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ReportTypeSelectionPage()))),
-                _buildQuickActionButton(
-                    "Catat Pencucian",
-                    Icons.wash_rounded,
-                    () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const WashingLogPage()))),
+              if (perbaikanTerbaru.isNotEmpty) ...[
+                const SizedBox(height: 24.0),
+                _buildSectionTitle("Perbaikan Terbaru"),
+                const SizedBox(height: 8.0),
+                ..._buildAnimatedList(perbaikanTerbaru
+                    .map((r) => _buildRecentRepairCard(r))
+                    .toList()),
               ],
-            ),
-            if (tugas.isNotEmpty) ...[
-              _buildSectionTitle("Perlu Perhatian Segera"),
-              ...tugas.map((t) => _buildTaskCard(t)),
+              const SizedBox(height: 24.0),
+              _buildSectionTitle("Analisis"),
+              const SizedBox(height: 8.0),
+              _buildAnimatedItem(
+                  index: 0,
+                  child: _buildChartCard("Tren Masalah Harian",
+                      _buildBarChart(data['chart_tren_harian']))),
+              const SizedBox(height: 16.0),
+              _buildAnimatedItem(
+                  index: 1,
+                  child: _buildChartCard(
+                      "Aset Bermasalah",
+                      _buildAssetBreakdownChart(
+                          data['chart_aset_bermasalah']))),
+              const SizedBox(height: 100.0),
             ],
-            _buildSectionTitle("Analisis"),
-            _buildChartCard("Tren Masalah Harian",
-                _buildBarChart(data['chart_tren_harian'])),
-            const SizedBox(height: 16),
-            _buildChartCard("Aset Bermasalah",
-                _buildAssetBreakdownChart(data['chart_aset_bermasalah'])),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  // [BARU] Helper untuk menganimasikan satu item
+  Widget _buildAnimatedItem({required int index, required Widget child}) {
+    return AnimationConfiguration.staggeredList(
+      position: index,
+      duration: const Duration(milliseconds: 375),
+      child: SlideAnimation(
+        verticalOffset: 50.0,
+        child: FadeInAnimation(child: child),
+      ),
+    );
+  }
+
+  // [BARU] Helper untuk menganimasikan banyak item dalam daftar
+  List<Widget> _buildAnimatedList(List<Widget> widgets) {
+    return List.generate(
+      widgets.length,
+      (index) {
+        return AnimationConfiguration.staggeredList(
+          position: index,
+          duration: const Duration(milliseconds: 375),
+          child: SlideAnimation(
+            verticalOffset: 50.0,
+            child: FadeInAnimation(child: widgets[index]),
+          ),
+        );
+      },
     );
   }
 
   // WIDGET BUILDERS
 
   Widget _buildSectionTitle(String title) {
-    return Padding(
-        padding: const EdgeInsets.only(top: 24.0, bottom: 8.0),
-        child:
-            Text(title, style: AppTextStyles.subtitle.copyWith(fontSize: 18)));
+    return Text(title, style: AppTextStyles.subtitle.copyWith(fontSize: 18));
   }
 
   // Di dalam kelas _HomePageState
@@ -487,6 +575,36 @@ class _HomePageState extends State<HomePage> {
                           ]));
                     })))),
       ],
+    );
+  }
+
+  Widget _buildRecentRepairCard(Map<String, dynamic> repair) {
+    final date = DateTime.parse(repair['repaired_at']).toLocal();
+    final unitCode = repair['unit_code'] ?? 'N/A';
+    final itemName = repair['custom_title'] ?? repair['item_name'] ?? 'Item';
+    final repairedBy = repair['repaired_by'] ?? 'N/A';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+        title: Text(itemName,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        subtitle: Text("$unitCode • Oleh: $repairedBy",
+            style: const TextStyle(fontSize: 12)),
+        trailing: Text(DateFormat('d MMM').format(date),
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      MaintenanceHistoryDetailPage(record: repair)));
+        },
+      ),
     );
   }
 }

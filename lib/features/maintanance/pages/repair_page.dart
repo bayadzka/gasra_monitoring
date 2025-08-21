@@ -286,17 +286,20 @@ class _RepairPageState extends State<RepairPage> {
               ],
             ),
           ),
-          bottomNavigationBar: Container(
-            color: AppTheme.background,
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.save),
-              label: const Text("Simpan Catatan Perbaikan"),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12)),
-              onPressed: _isSubmitting ? null : _submitRepair,
+          bottomNavigationBar: SafeArea(
+            // [FIX] Bungkus dengan SafeArea
+            child: Container(
+              color: AppTheme.background,
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.save),
+                label: const Text("Simpan Catatan Perbaikan"),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12)),
+                onPressed: _isSubmitting ? null : _submitRepair,
+              ),
             ),
           ),
         ));

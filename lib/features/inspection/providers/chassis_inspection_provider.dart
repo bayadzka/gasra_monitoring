@@ -163,7 +163,7 @@ class ChassisInspectionProvider extends BaseInspectionProvider {
       final inspectionData = {
         'chassis_id': int.tryParse(selectedChassisId!),
         'inspector_id': user.id,
-        'tanggal': DateTime.now().toIso8601String(),
+        'tanggal': DateTime.now().toUtc().toIso8601String(),
       };
 
       final insertedInspection = await supabase

@@ -152,7 +152,7 @@ class HeadInspectionProvider extends BaseInspectionProvider {
       final inspectionData = {
         'head_id': selectedHeadId,
         'inspector_id': user.id,
-        'tanggal': DateTime.now().toIso8601String(),
+        'tanggal': DateTime.now().toUtc().toIso8601String(),
       };
 
       final insertedInspection = await supabase
