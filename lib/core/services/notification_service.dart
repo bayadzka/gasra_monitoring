@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gasra_monitoring/core/services/supabase_config.dart';
 import 'package:gasra_monitoring/features/maintanance/pages/maintenance_list_page.dart';
+import 'package:gasra_monitoring/features/maintanance/pages/maintanance_history_page.dart'; // [BARU] Import halaman riwayat perbaikan
 import 'package:gasra_monitoring/main.dart';
 
 class NotificationService {
@@ -17,10 +18,8 @@ class NotificationService {
         AndroidInitializationSettings('@drawable/ic_notification');
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings();
-    const InitializationSettings settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+    const InitializationSettings settings =
+        InitializationSettings(android: androidSettings, iOS: iosSettings);
     await _localNotifications.initialize(settings);
   }
 
@@ -28,25 +27,30 @@ class NotificationService {
     await _firebaseMessaging.requestPermission();
     await _initializeLocalNotifications();
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-    // [BARU] Menambahkan listener untuk notifikasi yang di-klik saat app tertutup/background
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
   }
 
-  // [BARU] Fungsi ini akan berjalan saat pengguna menekan notifikasi
+  // [DIUBAH] Fungsi ini sekarang menangani 2 jenis notifikasi
   void _handleMessageOpenedApp(RemoteMessage message) {
     if (kDebugMode) {
       print("Notifikasi di-klik!");
       print("Data: ${message.data}");
     }
 
-    // Cek apakah ada data report_id atau result_id di dalam notifikasi
+    // Cek apakah ini notifikasi masalah baru
     if (message.data['report_id'] != null ||
         message.data['result_id'] != null) {
       // Arahkan pengguna ke halaman "Perlu Perbaikan"
-      // Kita menggunakan navigatorKey karena service ini berjalan di luar context widget
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const MaintenanceListPage()),
+        (route) => route.isFirst,
+      );
+    }
+    // [BARU] Cek apakah ini notifikasi perbaikan selesai
+    else if (message.data['maintenance_id'] != null) {
+      // Arahkan pengguna ke halaman "Riwayat Perbaikan"
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MaintenanceHistoryPage()),
         (route) => route.isFirst,
       );
     }
