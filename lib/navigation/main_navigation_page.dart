@@ -85,51 +85,92 @@ class InspectionHubPage extends StatelessWidget {
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
       ),
-      body: AnimationLimiter(
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: AnimationConfiguration.toStaggeredList(
-            duration: const Duration(milliseconds: 375),
-            childAnimationBuilder: (widget) => SlideAnimation(
-              verticalOffset: 50.0,
-              child: FadeInAnimation(child: widget),
-            ),
+      // Menggunakan Row dengan 3 Expanded untuk membagi layar menjadi 3 bagian
+      body: Row(
+        children: [
+          _buildVerticalCard(
+            context,
+            title: "Inspeksi Head",
+            subtitle: "Pemeriksaan unit truk",
+            icon: Icons.fire_truck_rounded,
+            color: AppTheme.logoRed, // Warna dari tema Anda
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const HeadTypeSelectionPage(isForReport: false))),
+          ),
+          _buildVerticalCard(
+            context,
+            title: "Inspeksi Chassis",
+            subtitle: "Pemeriksaan rangka & roda",
+            icon: Icons.miscellaneous_services_rounded,
+            color: AppTheme.logoAbu, // Warna dari tema Anda
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ChassisTypeSelectionPage(isForReport: false))),
+          ),
+          _buildVerticalCard(
+            context,
+            title: "Inspeksi Storage",
+            subtitle: "Pemeriksaan tabung & katup",
+            icon: Icons.inventory_2_rounded,
+            color: AppTheme.logoBiru, // Warna dari tema Anda
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const StorageTypeSelectionPage(isForReport: false))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper widget baru untuk blok vertikal
+  Widget _buildVerticalCard(BuildContext context,
+      {required String title,
+      required String subtitle,
+      required IconData icon,
+      required Color color,
+      required VoidCallback onTap}) {
+    return Expanded(
+      child: AnimatedPressableCard(
+        // Widget kustom untuk animasi tekan
+        onTap: onTap,
+        child: Container(
+          color: color,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildInspectionTypeCard(
-                context,
-                title: "Inspeksi Head",
-                subtitle: "Pemeriksaan unit truk dan head",
-                icon: Icons.fire_truck_rounded,
-                color: AppTheme.logoRed,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            const HeadTypeSelectionPage(isForReport: false))),
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                child: Icon(icon, color: Colors.white, size: 40),
               ),
-              _buildInspectionTypeCard(
-                context,
-                title: "Inspeksi Chassis",
-                subtitle: "Pemeriksaan rangka dan roda",
-                icon: Icons.miscellaneous_services_rounded,
-                color: AppTheme.logoAbu,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const ChassisTypeSelectionPage(
-                            isForReport: false))),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              _buildInspectionTypeCard(
-                context,
-                title: "Inspeksi Storage",
-                subtitle: "Pemeriksaan tabung dan katup",
-                icon: Icons.inventory_2_rounded,
-                color: AppTheme.logoBiru,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const StorageTypeSelectionPage(
-                            isForReport: false))),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ],
           ),
@@ -137,60 +178,40 @@ class InspectionHubPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  // Helper widget baru untuk kartu tipe inspeksi
-  Widget _buildInspectionTypeCard(BuildContext context,
-      {required String title,
-      required String subtitle,
-      required IconData icon,
-      required Color color,
-      required VoidCallback onTap}) {
-    return Card(
-      elevation: 5,
-      shadowColor: color.withOpacity(0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              gradient: LinearGradient(
-            colors: [color.withOpacity(0.8), color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Colors.white.withOpacity(0.9),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                    const SizedBox(height: 4),
-                    Text(subtitle,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9))),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios,
-                  color: Colors.white, size: 18),
-            ],
-          ),
-        ),
+// [BARU] Widget kustom untuk menangani animasi tekan
+class AnimatedPressableCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+
+  const AnimatedPressableCard({
+    super.key,
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  State<AnimatedPressableCard> createState() => _AnimatedPressableCardState();
+}
+
+class _AnimatedPressableCardState extends State<AnimatedPressableCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: widget.child,
       ),
     );
   }
