@@ -91,12 +91,9 @@ class StorageInspectionProvider extends BaseInspectionProvider {
   // [DIUBAH] Fungsi ini sekarang juga membersihkan data
   @override
   void setAllConditionsToBaik(String category) {
-    final itemsToUpdate = groupedStorageItems[category] ?? [];
-    for (var item in itemsToUpdate) {
+    for (var item in allStorageItems) {
       if (inspectionResults.containsKey(item.id)) {
         inspectionResults[item.id]!.condition = 'baik';
-
-        // [FIX] Hapus juga keterangan dan foto saat "Baik Semua" ditekan
         inspectionResults[item.id]!.notesController.clear();
         inspectionResults[item.id]!.problemImageFile = null;
       }
